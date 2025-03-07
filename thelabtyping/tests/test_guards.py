@@ -1,5 +1,5 @@
-from unittest import TestCase
 from typing import Literal, assert_type
+from unittest import TestCase
 
 from thelabtyping.guards import is_literal_factory
 

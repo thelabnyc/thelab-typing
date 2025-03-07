@@ -1,10 +1,10 @@
 from collections.abc import Callable
+from typing import _LiteralGenericAlias  # type:ignore[attr-defined]
 from typing import (
-    TypeIs,
     TypeAliasType,
+    TypeIs,
     get_args,
 )
-from typing import _LiteralGenericAlias  # type:ignore[attr-defined]
 
 
 def is_literal_factory[T](lit: T) -> Callable[[object], TypeIs[T]]:
