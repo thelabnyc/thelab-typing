@@ -1,6 +1,6 @@
 [project]
 name = "thelab-typing"
-version = "0.0.0"
+version = "0.1.0a0"
 description = "A collection of utilities related to Python type checking"
 authors = [
     {name = "thelab",email = "thelabdev@thelab.co"}
@@ -9,6 +9,7 @@ license = {text = "ISC"}
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
+    "pydantic (>=2.10.6,<3.0.0)"
 ]
 
 [project.optional-dependencies]
