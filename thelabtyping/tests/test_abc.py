@@ -22,17 +22,14 @@ class ListOfTest(TestCase):
         )
 
     def test_isinstance(self) -> None:
-        """Check instance types"""
         self.assertIsInstance(self.people, PersonList)
         self.assertIsInstance(self.people[0], Person)
 
     def test_index_accessors(self) -> None:
-        """Check index accessors"""
         self.assertEqual(self.people[0].name, "Jack")
         self.assertEqual(self.people[1].name, "Diane")
 
     def test_iteration(self) -> None:
-        """Check iteration"""
         names = ["Jack", "Diane"]
         for i, person in enumerate(self.people):
             self.assertEqual(person.name, names[i])
