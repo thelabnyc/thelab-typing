@@ -81,7 +81,7 @@ gpg_sign = true
 tag_format = "v$version"
 update_changelog_on_bump = true
 changelog_merge_prerelease = true
-version_provider = "poetry"
+version_provider = "pep621"
 version_scheme = "pep440"
 version_files = [
     "pyproject.toml:version",
