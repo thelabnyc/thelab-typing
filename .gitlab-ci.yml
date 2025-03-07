@@ -53,7 +53,7 @@ test:lib:
   parallel:
     matrix:
       - PYIMAGE: py313
-        TOX_SKIP_ENV: "^(?!py313-)"
+        TOX_SKIP_ENV: "^(?!py313)"
   script:
     - poetry run tox
   coverage: '/^TOTAL.+?(\d+\%)$/'
