@@ -11,9 +11,9 @@ exception-throwing functions into functions which return a Result type.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable, Generator, Iterator
+from collections.abc import Callable, Generator, Iterable, Iterator
 from functools import wraps
-from typing import Literal, NoReturn, Self
+from typing import Any, Literal, NoReturn, Self
 
 
 class UnwrapError(TypeError):
@@ -70,6 +70,18 @@ class Ok[_OK](_Result[_OK, None]):
     def __iter__(self) -> Iterator[_OK]:
         yield self.ok_value
 
+    def __repr__(self) -> str:
+        return "Ok({})".format(repr(self.ok_value))
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Ok) and self.ok_value == other.ok_value
+
+    def __ne__(self, other: Any) -> bool:
+        return not (self == other)
+
+    def __hash__(self) -> int:
+        return hash((True, self.ok_value))
+
     @property
     def is_ok(self) -> Literal[True]:
         return True
@@ -103,6 +115,18 @@ class Err[_Err](_Result[None, _Err]):
             yield
 
         return _iter()
+
+    def __repr__(self) -> str:
+        return "Err({})".format(repr(self.err_value))
+
+    def __eq__(self, other: Any) -> bool:
+        return isinstance(other, Err) and self.err_value == other.err_value
+
+    def __ne__(self, other: Any) -> bool:
+        return not (self == other)
+
+    def __hash__(self) -> int:
+        return hash((False, self.err_value))
 
     @property
     def is_ok(self) -> Literal[False]:
@@ -151,3 +175,23 @@ def do[T, E](gen: Generator[Result[T, E], None, None]) -> Result[T, E]:
     except DoException as e:
         out: Err[E] = e.err
         return out
+
+
+def partition_results[T, E](
+    results: Iterable[Result[T, E]],
+) -> tuple[
+    list[T],
+    list[E],
+]:
+    """
+    Take an iterable of Results and partition them into two lists, one with all
+    the OK values, one with all the Err values.
+    """
+    oks: list[T] = []
+    errs: list[E] = []
+    for res in results:
+        if res.is_ok:
+            oks.append(res.ok_value)
+        else:
+            errs.append(res.err_value)
+    return oks, errs

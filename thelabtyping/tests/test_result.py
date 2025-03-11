@@ -1,7 +1,15 @@
 from typing import assert_type
 from unittest import TestCase
 
-from thelabtyping.result import Err, Ok, Result, UnwrapError, as_result, do
+from thelabtyping.result import (
+    Err,
+    Ok,
+    Result,
+    UnwrapError,
+    as_result,
+    do,
+    partition_results,
+)
 
 
 class OkTest(TestCase):
@@ -15,6 +23,13 @@ class OkTest(TestCase):
         with self.assertRaises(UnwrapError):
             res.unwrap_err()
 
+    def test_dunders(self) -> None:
+        self.assertEqual(Ok(5), Ok(5))
+        self.assertNotEqual(Ok(5), Ok(6))
+        self.assertNotEqual(Ok(5), Err(5))
+        self.assertIsNotNone(hash(Ok(1)))
+        self.assertEqual(repr(Ok(1)), "Ok(1)")
+
 
 class ErrTest(TestCase):
     def test_err_result(self) -> None:
@@ -26,6 +41,13 @@ class ErrTest(TestCase):
         with self.assertRaises(UnwrapError):
             res.unwrap()
         self.assertEqual(res.unwrap_err(), "foo")
+
+    def test_dunders(self) -> None:
+        self.assertEqual(Err(5), Err(5))
+        self.assertNotEqual(Err(5), Err(6))
+        self.assertNotEqual(Err(5), Ok(5))
+        self.assertIsNotNone(hash(Err(1)))
+        self.assertEqual(repr(Err(1)), "Err(1)")
 
 
 class ResultTest(TestCase):
@@ -115,3 +137,30 @@ class ResultTest(TestCase):
         resD: Result[int, str] = do(Ok(x + y) for x in foo(6) for y in foo(1))
         assert_type(resD, Result[int, str])
         self.assertEqual(resD.err(), "x is too small")
+
+    def test_partition_results(self) -> None:
+        mixed_results: list[Result[int, str]] = [
+            Ok(1),
+            Ok(2),
+            Err("foo"),
+            Ok(3),
+            Err("bar"),
+        ]
+        oks, errs = partition_results(mixed_results)
+        assert_type(oks, list[int])
+        assert_type(errs, list[str])
+        self.assertEqual(
+            oks,
+            [
+                1,
+                2,
+                3,
+            ],
+        )
+        self.assertEqual(
+            errs,
+            [
+                "foo",
+                "bar",
+            ],
+        )
