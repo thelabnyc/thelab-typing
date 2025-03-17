@@ -4,6 +4,8 @@ import django_stubs_ext
 
 django_stubs_ext.monkeypatch()
 
+ROOT_URLCONF = "thelabtyping.tests.settings.urls"
+
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 INSTALLED_APPS = [
     "django.contrib.auth",
@@ -13,6 +15,18 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "rest_framework",
+    "thelabtyping.tests.sampleapp",
+]
+
+MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
 SECRET_KEY = "secret"
