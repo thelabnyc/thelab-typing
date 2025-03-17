@@ -139,7 +139,7 @@ class Err[_Err](_Result[None, _Err]):
     def ok(self) -> None:
         return None
 
-    def err(self) -> _Err | None:
+    def err(self) -> _Err:
         return self.err_value
 
     def and_then(self, op: object) -> Self:

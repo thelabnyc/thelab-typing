@@ -13,3 +13,6 @@ class ListOf[T: pydantic.BaseModel](pydantic.RootModel[list[T]]):
 
     def __getitem__(self, item: int) -> T:
         return self.root[item]
+
+    def __len__(self) -> int:
+        return len(self.root)

@@ -49,6 +49,7 @@ from-first = true
 
 [tool.mypy]
 python_version = "3.13"
+plugins = ["mypy_django_plugin.main"]
 
 # Strict mode, see mypy --help
 warn_unused_configs = true
@@ -67,6 +68,9 @@ no_implicit_reexport = true
 show_error_codes = true
 # Not turned on by strict
 strict_equality = true
+
+[tool.django-stubs]
+django_settings_module = "thelabtyping.tests.settings.sqlite"
 
 [tool.coverage.run]
 branch = true
