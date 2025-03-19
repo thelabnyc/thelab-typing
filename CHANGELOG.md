@@ -1,5 +1,11 @@
 # Changes
 
+## v0.1.0b2 (2025-03-19)
+
+### Feat
+
+- add Router class for view routing by HTTP method
+
 ## v0.1.0b1 (2025-03-17)
 
 ### Feat
