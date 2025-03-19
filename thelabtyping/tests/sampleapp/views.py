@@ -1,6 +1,7 @@
 from typing import Literal, assert_type
 
 from django.contrib.auth.models import AnonymousUser, User
+from django.shortcuts import get_object_or_404
 from django.utils.decorators import method_decorator
 from django.views.generic import View
 
@@ -16,6 +17,7 @@ from thelabtyping.api.requests import (
     TypedRequestQuery,
 )
 from thelabtyping.api.responses import APIResponse
+from thelabtyping.api.routing import Router
 from thelabtyping.api.serializers import Empty
 from thelabtyping.api.views import validate
 
@@ -68,6 +70,50 @@ class UserView(View):
             .and_then(lambda djuser: APIUser.from_django(request, djuser))
         )
         return APIResponse(result)
+
+
+router = Router()
+route_users = router.route("users/", name="router-users-list")
+route_user_detail = router.route("users/<int:pk>/", name="router-users-detail")
+
+
+@route_users.get
+@validate()
+def router_users_list(
+    request: TypedRequestQuery[UserSearchQuery],
+) -> APIResponse[ListOf[APIUser]]:
+    # Use the UserSearchQuery model to get he queryset of users to return
+    users, errs = APIUser.list_from_django(
+        request,
+        request.validated_querystring.get_queryset(),
+    )
+    return APIResponse(users)
+
+
+@route_user_detail.get
+@validate()
+def router_users_detail(
+    request: EmptyTypedRequest,
+    pk: int,
+) -> APIResponse[APIUser]:
+    # Use the UserSearchQuery model to get he queryset of users to return
+    user = get_object_or_404(User, pk=pk)
+    return APIResponse(APIUser.from_django(request, user))
+
+
+@route_users.post
+@validate()
+def router_users_post(request: AuthdTypedRequestBody[APIUser]) -> APIResponse[APIUser]:
+    # Save the user model and return it
+    result = (
+        # Take the input data
+        request.validated_body
+        # Create the Django user
+        .create(request)
+        # Then serialize it back into an APIUser
+        .and_then(lambda djuser: APIUser.from_django(request, djuser))
+    )
+    return APIResponse(result)
 
 
 @validate()
