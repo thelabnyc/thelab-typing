@@ -7,7 +7,12 @@ from typing import Concatenate, NewType
 
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponseBase, HttpResponseNotAllowed
-from django.urls import URLPattern, path
+from django.urls import URLPattern, path, reverse
+from django.urls.exceptions import NoReverseMatch
+import pydantic
+
+from ..abc import DictOf
+from .responses import APIResponse
 
 
 class HttpMethod(StrEnum):
@@ -113,13 +118,38 @@ class Route:
 type RouteMap = dict[URLPatternStr, Route]
 
 
+RouterIndex = DictOf[str, pydantic.HttpUrl]
+
+
 class Router:
     basename: str | None = None
     routes: RouteMap
 
-    def __init__(self, basename: str | None = None) -> None:
+    def __init__(
+        self,
+        basename: str | None = None,
+        enable_index: bool = True,
+    ) -> None:
         self.basename = basename
         self.routes: RouteMap = {}
+        # Immediately register the root index view
+        if enable_index:
+            self.route("", name="index", get=self.index_view)
+
+    def index_view(self, request: HttpRequest) -> APIResponse[RouterIndex]:
+        index = RouterIndex({})
+        namespace = request.resolver_match.namespace if request.resolver_match else None
+        for pattern, route in self.routes.items():
+            name = f"{namespace}:{route.name}" if namespace else route.name
+            try:
+                url_path = reverse(name)
+            except NoReverseMatch:
+                # Catch and ignore this so that we skip URLs which require
+                # params (e.g. detail views)
+                continue
+            url = request.build_absolute_uri(url_path)
+            index[name] = pydantic.HttpUrl(url)
+        return APIResponse(index)
 
     def route[**P, R: HttpResponseBase](
         self,

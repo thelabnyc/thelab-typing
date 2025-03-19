@@ -96,6 +96,7 @@ version_files = [
 ]
 pre_bump_hooks = [
     "pre-commit run --all-files || true",
+    "uv build",
 ]
 post_bump_hooks = [
     "git push origin master $CZ_POST_CURRENT_TAG_VERSION"

@@ -11,7 +11,7 @@ from .views import (
 )
 
 # Alternate method of building a router
-alt_router = Router(basename="alt-router")
+alt_router = Router(basename="alt-router", enable_index=False)
 alt_router.route(
     "users/",
     name="users-list",

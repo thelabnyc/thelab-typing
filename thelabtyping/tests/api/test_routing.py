@@ -36,6 +36,32 @@ class RouterTest(TestCase):
             "/api/alt-router/users/42/",
         )
 
+    def test_router_index_main(self) -> None:
+        url = reverse("sampleapp:index")
+        self.assertEqual(url, "/api/router/")
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        self.assertJSONEqual(
+            resp.content,
+            {
+                "sampleapp:index": "http://testserver/api/router/",
+                "sampleapp:router-users-list": "http://testserver/api/router/users/",
+            },
+        )
+
+    def test_router_index_unnamespaced(self) -> None:
+        url = reverse("unnamespaced-router-index")
+        self.assertEqual(url, "/unnamespaced-router/")
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        self.assertJSONEqual(
+            resp.content,
+            {
+                "unnamespaced-router-index": "http://testserver/unnamespaced-router/",
+                "unnamespaced-router-users-list": "http://testserver/unnamespaced-router/users/",
+            },
+        )
+
     def test_router_dispatch_get(self) -> None:
         resp = self.client.get(reverse("sampleapp:router-users-list"))
         self.assertEqual(resp.status_code, Status.HTTP_200_OK)
