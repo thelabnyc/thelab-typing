@@ -1,5 +1,15 @@
 # Changes
 
+## v0.1.0b4 (2025-03-19)
+
+### Feat
+
+- add api router index view
+
+### Fix
+
+- **deps**: update dependency django-stubs-ext to >=5.1.3
+
 ## v0.1.0b3 (2025-03-19)
 
 ## v0.1.0b2 (2025-03-19)
