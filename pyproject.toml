@@ -1,6 +1,6 @@
 [project]
 name = "thelab-typing"
-version = "0.1.0b2"
+version = "0.1.0b3"
 description = "A collection of utilities related to Python type checking"
 authors = [
     {name = "thelab",email = "thelabdev@thelab.co"}
