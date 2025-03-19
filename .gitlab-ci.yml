@@ -36,8 +36,6 @@ include:
       - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
   - component: gitlab.com/thelabnyc/thelab-ci-components/publish-gitlab-release@0.4.0
   - component: gitlab.com/thelabnyc/thelab-ci-components/publish-to-pypi@0.4.0
-    inputs:
-      image: "registry.gitlab.com/thelabnyc/python:${PYIMAGE}"
 
 
 test:lib:
