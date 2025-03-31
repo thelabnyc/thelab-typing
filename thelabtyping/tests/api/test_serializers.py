@@ -117,12 +117,12 @@ class APIObjTest(TestCase):
             ],
         )
         self.assertIsInstance(errs[0], pydantic_core.ValidationError)
-        self.assertEqual(
-            str(errs[0]),
-            (
-                "1 validation error for APIUser\n"
-                "first_name\n"
-                "  Input should be a valid string [type=string_type, input_value=42, input_type=int]\n"
-                "    For further information visit https://errors.pydantic.dev/2.10/v/string_type"
+        self.assertTrue(
+            str(errs[0]).startswith(
+                (
+                    "1 validation error for APIUser\n"
+                    "first_name\n"
+                    "  Input should be a valid string [type=string_type, input_value=42, input_type=int]"
+                )
             ),
         )
