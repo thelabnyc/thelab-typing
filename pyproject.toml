@@ -17,11 +17,9 @@ dependencies = [
 ]
 
 [project.urls]
-homepage = "https://gitlab.com/thelabnyc/thelab-typing"
-docs = "https://gitlab.com/thelabnyc/thelab-typing"
-repository = "https://gitlab.com/thelabnyc/thelab-typing"
-issues = "https://gitlab.com/thelabnyc/thelab-typing/-/issues/"
-changelog = "https://gitlab.com/thelabnyc/thelab-typing/-/blob/master/CHANGELOG.md"
+Homepage = "https://gitlab.com/thelabnyc/thelab-typing"
+Documentation = "https://gitlab.com/thelabnyc/thelab-typing"
+Repository = "https://gitlab.com/thelabnyc/thelab-typing"
 
 [project.optional-dependencies]
 django = [
