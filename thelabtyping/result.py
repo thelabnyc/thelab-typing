@@ -71,7 +71,7 @@ class Ok[_OK](_Result[_OK, None]):
         yield self.ok_value
 
     def __repr__(self) -> str:
-        return "Ok({})".format(repr(self.ok_value))
+        return f"Ok({repr(self.ok_value)})"
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Ok) and self.ok_value == other.ok_value
@@ -117,7 +117,7 @@ class Err[_Err](_Result[None, _Err]):
         return _iter()
 
     def __repr__(self) -> str:
-        return "Err({})".format(repr(self.err_value))
+        return f"Err({repr(self.err_value)})"
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, Err) and self.err_value == other.err_value
@@ -166,7 +166,7 @@ def as_result[**P, R, E: Exception](
     return decorator
 
 
-def do[T, E](gen: Generator[Result[T, E], None, None]) -> Result[T, E]:
+def do[T, E](gen: Generator[Result[T, E]]) -> Result[T, E]:
     """
     Do notation for Result (syntactic sugar for sequence of `and_then()` calls).
     """

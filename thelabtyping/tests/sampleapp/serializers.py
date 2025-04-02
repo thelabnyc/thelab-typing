@@ -1,4 +1,4 @@
-from typing import Optional, Self
+from typing import Self
 
 from django.contrib.auth.models import User
 from django.db.models import QuerySet
@@ -12,8 +12,8 @@ from thelabtyping.result import Ok, Result, as_result
 
 
 class UserSearchQuery(pydantic.BaseModel):
-    id: Optional[int] = None
-    first_name: Optional[str] = None
+    id: int | None = None
+    first_name: str | None = None
 
     def get_queryset(self) -> QuerySet[User]:
         qs = User.objects.all()
