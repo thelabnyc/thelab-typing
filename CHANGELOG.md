@@ -1,5 +1,21 @@
 # Changes
 
+## v0.1.0 (2025-04-03)
+
+### Feat
+
+- support Django 5.2. Drop Django 5.0
+
+### Fix
+
+- **deps**: update dependency pydantic to >=2.11.1,<3.0.0
+- **deps**: update dependency pydantic to >=2.11.0,<3.0.0
+- **deps**: update dependency djangorestframework to >=3.16.0
+
+### Refactor
+
+- add pyupgrade / django-upgrade precommit hooks
+
 ## v0.1.0b5 (2025-03-21)
 
 ## v0.1.0b4 (2025-03-19)
