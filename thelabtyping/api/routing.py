@@ -16,6 +16,8 @@ from .responses import APIResponse
 
 
 class HttpMethod(StrEnum):
+    """HTTP request methods."""
+
     GET = "GET"
     POST = "POST"
     PUT = "PUT"
@@ -39,32 +41,42 @@ ALL_METHODS: AllowedMethods = {
 
 @dataclass
 class RegisteredView[**P, R: HttpResponseBase]:
+    """Container for a view function and its allowed HTTP methods."""
+
     methods: AllowedMethods
     fn: ViewFn[P, R]
 
 
 @dataclass
 class Route:
+    """Represents a URL route with multiple HTTP method handlers."""
+
     name: str
     views: list[RegisteredView[[], HttpResponseBase]]
 
     def __init__(self, name: str) -> None:
+        """Initialize a new route with the given name."""
         self.name = name
         self.views = []
 
     def get[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
+        """Register a view function for GET requests."""
         return self.register({HttpMethod.GET})(fn)
 
     def post[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
+        """Register a view function for POST requests."""
         return self.register({HttpMethod.POST})(fn)
 
     def put[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
+        """Register a view function for PUT requests."""
         return self.register({HttpMethod.PUT})(fn)
 
     def patch[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
+        """Register a view function for PATCH requests."""
         return self.register({HttpMethod.PATCH})(fn)
 
     def delete[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
+        """Register a view function for DELETE requests."""
         return self.register({HttpMethod.DELETE})(fn)
 
     def register[**P, R: HttpResponseBase](
@@ -74,6 +86,8 @@ class Route:
         [ViewFn[P, R]],
         ViewFn[P, R],
     ]:
+        """Register a view function for the specified HTTP methods."""
+
         def decorator(view_fn: ViewFn[P, R]) -> ViewFn[P, R]:
             self.add_view(view_fn, methods)
             return view_fn
@@ -85,6 +99,7 @@ class Route:
         view_fn: ViewFn[P, R],
         methods: AllowedMethods,
     ) -> None:
+        """Add a view function to this route for the given methods."""
         conflicts = self.allowed_methods & methods
         if conflicts:
             raise ImproperlyConfigured(
@@ -104,6 +119,7 @@ class Route:
         *args: object,
         **kwargs: object,
     ) -> HttpResponseBase:
+        """Dispatch an incoming request to the appropriate view function."""
         for view in self.views:
             if request.method in view.methods:
                 return view.fn(request, *args, **kwargs)
@@ -112,6 +128,7 @@ class Route:
 
     @property
     def allowed_methods(self) -> AllowedMethods:
+        """Get all HTTP methods supported by this route."""
         return reduce(or_, (view.methods for view in self.views), set())
 
 
@@ -122,6 +139,8 @@ RouterIndex = DictOf[str, pydantic.HttpUrl]
 
 
 class Router:
+    """URL router for organizing and dispatching API routes."""
+
     basename: str | None = None
     routes: RouteMap
 
@@ -130,6 +149,7 @@ class Router:
         basename: str | None = None,
         enable_index: bool = True,
     ) -> None:
+        """Initialize a new router with optional basename and index view."""
         self.basename = basename
         self.routes: RouteMap = {}
         # Immediately register the root index view
@@ -137,6 +157,7 @@ class Router:
             self.route("", name="index", get=self.index_view)
 
     def index_view(self, request: HttpRequest) -> APIResponse[RouterIndex]:
+        """Auto-generated index view listing all available routes."""
         index = RouterIndex({})
         namespace = request.resolver_match.namespace if request.resolver_match else None
         for pattern, route in self.routes.items():
@@ -161,6 +182,7 @@ class Router:
         patch: ViewFn[P, R] | None = None,
         delete: ViewFn[P, R] | None = None,
     ) -> Route:
+        """Register a new route with the given URL pattern and view functions."""
         _pattern = URLPatternStr(url_pattern)
         if _pattern in self.routes:
             raise ImproperlyConfigured(
@@ -186,6 +208,7 @@ class Router:
 
     @property
     def urls(self) -> list[URLPattern]:
+        """Get Django URLPattern objects for all registered routes."""
         return [
             path(pattern, route.dispatch, name=route.name)
             for pattern, route in self.routes.items()

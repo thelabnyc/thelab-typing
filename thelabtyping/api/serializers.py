@@ -22,8 +22,11 @@ class Empty(pydantic.BaseModel):
 
 
 class APIObj[_DjangoType](pydantic.BaseModel):
+    """Base class for creating API serializers from Django models."""
+
     @classmethod
     def get_list_model(cls) -> type[ListOf[Self]]:
+        """Get or create a ListOf type for this model."""
         # Use custom List class if its defined
         ListCls = getattr(cls, "List", None)
         if ListCls:
@@ -45,6 +48,7 @@ class APIObj[_DjangoType](pydantic.BaseModel):
         request: HttpRequest,
         obj: _DjangoType,
     ) -> Result[Self, pydantic_core.ValidationError]:
+        """Convert a Django model instance to this API model."""
         raise NotImplementedError  # pragma: no cover
 
     @classmethod
@@ -56,6 +60,7 @@ class APIObj[_DjangoType](pydantic.BaseModel):
         ListOf[Self],
         list[pydantic_core.ValidationError],
     ]:
+        """Convert a collection of Django models to a typed list, partitioning successes and errors."""
         oks, errs = partition_results(cls.from_django(request, row) for row in rows)
         if len(errs) > 0:
             logging.info(

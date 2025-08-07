@@ -4,6 +4,8 @@ from enum import Enum, IntEnum
 
 
 class StatusType(Enum):
+    """HTTP status code categories."""
+
     INFORMATIONAL = (100, 199)
     SUCCESS = (200, 299)
     REDIRECT = (300, 399)
@@ -11,10 +13,13 @@ class StatusType(Enum):
     SERVER_ERROR = (500, 599)
 
     def is_member(self, candidate: Status) -> bool:
+        """Check if a status code belongs to this category."""
         return self.value[0] <= candidate <= self.value[1]
 
 
 class Status(IntEnum):
+    """HTTP status codes with category checking methods."""
+
     HTTP_100_CONTINUE = 100
     HTTP_101_SWITCHING_PROTOCOLS = 101
     HTTP_102_PROCESSING = 102
@@ -82,20 +87,25 @@ class Status(IntEnum):
 
     @property
     def is_informational(self) -> bool:
+        """Check if this is an informational status (1xx)."""
         return StatusType.INFORMATIONAL.is_member(self)
 
     @property
     def is_success(self) -> bool:
+        """Check if this is a success status (2xx)."""
         return StatusType.SUCCESS.is_member(self)
 
     @property
     def is_redirect(self) -> bool:
+        """Check if this is a redirect status (3xx)."""
         return StatusType.REDIRECT.is_member(self)
 
     @property
     def is_client_error(self) -> bool:
+        """Check if this is a client error status (4xx)."""
         return StatusType.CLIENT_ERROR.is_member(self)
 
     @property
     def is_server_error(self) -> bool:
+        """Check if this is a server error status (5xx)."""
         return StatusType.SERVER_ERROR.is_member(self)

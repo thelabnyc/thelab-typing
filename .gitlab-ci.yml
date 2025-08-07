@@ -1,14 +1,12 @@
 stages:
   - test
+  - docs
   - release
 
 variables:
   PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
   UV_CACHE_DIR: "$CI_PROJECT_DIR/.cache/uv"
-  UV_VERSION: 0.8.4
-  BASE_LAYER: bookworm-slim
-  UV_LINK_MODE: copy
-  PYTHON_VERSION: "3.13"
+  PYIMAGE: py313
 
 .rules_mrs_and_protected:
   - if: $CI_PIPELINE_SOURCE == "schedule"
@@ -17,10 +15,24 @@ variables:
   - if: $CI_COMMIT_TAG && $CI_COMMIT_REF_PROTECTED == "true"
   - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
 
+.rules_only_mrs:
+  - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+
+.rules_only_master:
+  - if: $CI_PIPELINE_SOURCE == "schedule"
+    when: never
+  - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $CI_COMMIT_REF_PROTECTED == "true"
+
+.script_build_docs:
+  - make docs
+
 .dev_dependency_job: &dev_dependency_job
-  image: "ghcr.io/astral-sh/uv:${UV_VERSION}-python${PYTHON_VERSION}-${BASE_LAYER}"
+  image: "registry.gitlab.com/thelabnyc/python:${PYIMAGE}"
+  before_script:
+    # Install dependencies
+    - uv sync --all-extras
   cache:
-    key: devdependencies-${PYTHON_VERSION}
+    key: devdependencies-${PYIMAGE}
     paths:
       - .cache/pip/
       - .cache/poetry/
@@ -46,7 +58,7 @@ test:lib:
   needs: []
   parallel:
     matrix:
-      - PYTHON_VERSION: "3.13"
+      - PYIMAGE: py313
         TOX_SKIP_ENV: "^(?!py313)"
   script:
     - uvx tox
@@ -56,3 +68,25 @@ test:lib:
       coverage_report:
         coverage_format: cobertura
         path: coverage.xml
+
+test:docs:
+  <<: *dev_dependency_job
+  rules:
+    - !reference [.rules_only_mrs]
+  stage: test
+  needs: []
+  script:
+    - !reference [.script_build_docs]
+
+pages:
+  <<: *dev_dependency_job
+  rules:
+    - !reference [.rules_only_master]
+  stage: docs
+  needs:
+    - test:lib
+  script:
+    - !reference [.script_build_docs]
+  artifacts:
+    paths:
+      - public
