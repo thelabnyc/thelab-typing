@@ -17,6 +17,8 @@ from typing import Any, Literal, NoReturn, Self
 
 
 class UnwrapError(TypeError):
+    """Raised when attempting to unwrap a Result in the wrong state."""
+
     pass
 
 
@@ -34,6 +36,8 @@ class DoException[E](Exception):
 
 
 class _Result[_OK, _Err](ABC):
+    """Abstract base class for Result types."""
+
     ok_value: _OK
     err_value: _Err
 
@@ -63,6 +67,8 @@ class _Result[_OK, _Err](ABC):
 
 
 class Ok[_OK](_Result[_OK, None]):
+    """Represents a successful result containing a value."""
+
     def __init__(self, value: _OK) -> None:
         self.ok_value = value
         self.err_value = None
@@ -101,6 +107,8 @@ class Ok[_OK](_Result[_OK, None]):
 
 
 class Err[_Err](_Result[None, _Err]):
+    """Represents a failed result containing an error."""
+
     def __init__(self, value: _Err) -> None:
         self.ok_value = None
         self.err_value = value
@@ -152,6 +160,8 @@ type Result[_OK, _Err] = Ok[_OK] | Err[_Err]
 def as_result[**P, R, E: Exception](
     *catch: type[E],
 ) -> Callable[[Callable[P, R]], Callable[P, Result[R, E]]]:
+    """Decorator that converts exception-throwing functions to return Result types."""
+
     def decorator(fn: Callable[P, R]) -> Callable[P, Result[R, E]]:
         @wraps(fn)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> Result[R, E]:

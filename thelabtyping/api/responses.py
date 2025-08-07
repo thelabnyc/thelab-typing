@@ -11,15 +11,20 @@ from .status import Status
 
 
 class APIValidationError(TypedDict):
+    """Structure for a single API validation error."""
+
     type: str
     msg: str
 
 
 class APIValidationErrors(TypedDict):
+    """Structure for API validation error response."""
+
     errors: dict[str, APIValidationError]
 
 
 def _build_errors(exc: pydantic_core.ValidationError) -> APIValidationErrors:
+    """Convert a Pydantic validation error to structured API error format."""
     errors = exc.errors(
         include_url=False,
         include_context=False,
@@ -54,6 +59,7 @@ class APIResponse[T: pydantic.BaseModel](HttpResponse):
         charset: str | None = None,
         headers: dict[str, str] | None = None,
     ):
+        """Create an API response from a Pydantic model or Result type."""
         data: str = ""
         if isinstance(maybe_obj, pydantic.BaseModel):
             obj = maybe_obj

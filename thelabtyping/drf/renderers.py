@@ -63,6 +63,7 @@ class BrowsableAPIRenderer(renderers.BrowsableAPIRenderer):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
+        """Render data for the browsable API, converting Pydantic models to dicts."""
         if isinstance(data, BaseModel):
             data = data.model_dump()
         return super().render(data, *args, **kwargs)
