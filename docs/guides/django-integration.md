@@ -136,7 +136,7 @@ Validation errors become structured JSON responses:
 
 ```py
 from thelabtyping.api import APIResponse
-from thelabtyping import Err
+from thelabtyping.result import Err
 import pydantic
 
 class QueryModel(pydantic.BaseModel):
@@ -180,7 +180,7 @@ def get_user(request: EmptyTypedRequest) -> HttpResponse:
 ```py
 from django.http import HttpRequest, HttpResponse
 from thelabtyping.api import validate, TypedRequestQuery
-from thelabtyping import as_result, Result, Ok, Err
+from thelabtyping.result import as_result, Result, Ok, Err
 import pydantic
 
 @as_result(ValueError, KeyError)
@@ -451,7 +451,7 @@ When dealing with collections of Django models, `partition_results` helps separa
 ```py
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User as DjangoUser
-from thelabtyping import partition_results, as_result
+from thelabtyping.result import partition_results, as_result
 from thelabtyping.api import APIObj, APIResponse, validate, EmptyTypedRequest
 from typing import Self
 import pydantic_core
@@ -508,7 +508,7 @@ def list_users_simplified(request: EmptyTypedRequest) -> HttpResponse:
 ### Error Handling Strategies
 
 ```py
-from thelabtyping import Err
+from thelabtyping.result import Err
 
 @validate()
 def robust_user_list(request: EmptyTypedRequest) -> HttpResponse:
@@ -536,7 +536,7 @@ Create API serializers with `APIObj`:
 from django.http import HttpRequest, HttpResponse
 from django.contrib.auth.models import User as DjangoUser
 from thelabtyping.api import APIObj, APIResponse, validate, TypedRequestQuery
-from thelabtyping import Result, as_result
+from thelabtyping.result import Result, as_result
 import pydantic_core
 
 class User(APIObj[DjangoUser]):

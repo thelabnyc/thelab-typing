@@ -78,7 +78,7 @@ pip install thelab-typing[django,drf]
 ### Core Result Types
 
 ```py
-from thelabtyping import Result, Ok, Err, as_result
+from thelabtyping.result import Result, Ok, Err, as_result
 
 @as_result(ValueError, TypeError)
 def parse_data(data: str) -> dict:

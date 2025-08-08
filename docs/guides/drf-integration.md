@@ -161,7 +161,7 @@ Enhanced renderers work with DRF class-based views:
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from thelabtyping.api import validate, TypedRequestBody
-from thelabtyping import Result, as_result
+from thelabtyping.result import Result, as_result
 
 class CreateUser(pydantic.BaseModel):
     name: str
@@ -273,7 +273,7 @@ class DRFUserView(APIView):
 Both Django and DRF views benefit from the same error handling patterns:
 
 ```py
-from thelabtyping import Result, Err
+from thelabtyping.result import Result, Err
 from thelabtyping.api import Status
 
 class DRFUserView(APIView):

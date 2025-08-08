@@ -29,7 +29,7 @@ def parse_user_id(data: str) -> int:
 ### Creating Results
 
 ```py
-from thelabtyping import Ok, Err
+from thelabtyping.result import Ok, Err
 
 # Success case
 success = Ok(42)
@@ -47,7 +47,7 @@ print(failure.unwrap_err())  # "Something went wrong"
 Convert exception-throwing functions to return Results:
 
 ```py
-from thelabtyping import as_result
+from thelabtyping.result import as_result
 
 @as_result(ValueError, TypeError)
 def safe_parse(data: str) -> dict:
@@ -91,7 +91,7 @@ result = (
 For more complex chains, use `do()` notation:
 
 ```py
-from thelabtyping import do
+from thelabtyping.result import do
 
 def process_data(raw: str) -> Result[dict, ValueError]:
     def _process():
@@ -109,7 +109,7 @@ def process_data(raw: str) -> Result[dict, ValueError]:
 Use `partition_results()` to handle collections of Results:
 
 ```py
-from thelabtyping import partition_results
+from thelabtyping.result import partition_results
 
 # Process a list of items
 results = [parse_int(s) for s in ["1", "2", "invalid", "4"]]
