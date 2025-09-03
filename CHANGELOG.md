@@ -1,5 +1,17 @@
 # Changes
 
+## v0.1.1 (2025-09-03)
+
+### Fix
+
+- update version constraint to allow django 5.2
+- **deps**: update dependency pydantic to >=2.11.3,<3.0.0
+- **deps**: update dependency pydantic to >=2.11.2,<3.0.0
+
+### Refactor
+
+- migrate black/flake8 -> ruff
+
 ## v0.1.0 (2025-04-03)
 
 ### Feat
