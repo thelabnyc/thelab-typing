@@ -28,7 +28,7 @@ django = [
 ]
 drf = [
     "django-stubs-ext (>=5.2.2)",
-    "djangorestframework (>=3.16.0)",
+    "djangorestframework (>=3.16.1)",
 ]
 
 [dependency-groups]
@@ -49,7 +49,7 @@ docs = [
     "mkdocs-pagenav-generator @ git+https://github.com/Andre601/mkdocs-pagenav-generator@acb5b1561695e8f69d67fda029779f40e4b0beef",
     "mkautodoc (>=0.2.0,<0.3)",
     "django (>=4.2,<5.3)",
-    "djangorestframework (>=3.16.0)",
+    "djangorestframework (>=3.16.1)",
 ]
 
 [tool.hatch.build.targets.wheel]
