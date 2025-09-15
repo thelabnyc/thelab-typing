@@ -36,7 +36,7 @@ dev = [
     "mypy (>=1.18.1)",
     "ruff (>=0.12.12)",
     "coverage (>=7.10.6)",
-    "django-stubs (>=5.2.2)",
+    "django-stubs (>=5.2.4)",
     "djangorestframework-stubs (>=3.16.2)",
     "tox (>=4.30.2)",
 ]
