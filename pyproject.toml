@@ -37,7 +37,7 @@ dev = [
     "ruff (>=0.14.1)",
     "coverage (>=7.11.0)",
     "django-stubs (>=5.2.7)",
-    "djangorestframework-stubs (>=3.16.4)",
+    "djangorestframework-stubs (>=3.16.5)",
     "tox (>=4.31.0)",
 ]
 docs = [
