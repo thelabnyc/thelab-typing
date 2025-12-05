@@ -1,5 +1,32 @@
 # Changes
 
+## v0.2.0 (2025-12-05)
+
+### Feat
+
+- add decorator support to Router and Route
+- support Python 3.14
+
+### Fix
+
+- **deps**: update dependency django-stubs-ext to >=5.2.8
+- **deps**: update dependency pydantic to >=2.12.5,<3.0.0
+- **deps**: update dependency pydantic to >=2.12.4,<3.0.0
+- **deps**: update dependency pydantic to >=2.12.3,<3.0.0
+- **deps**: update dependency pydantic to >=2.12.2,<3.0.0
+- **deps**: update dependency pydantic to >=2.12.0,<3.0.0
+- **deps**: update dependency django-stubs-ext to >=5.2.7
+- **deps**: update dependency django-stubs-ext to >=5.2.6
+- **deps**: update dependency pydantic to >=2.11.10,<3.0.0
+- **deps**: update dependency pydantic to >=2.11.9,<3.0.0
+- **deps**: update dependency pydantic to >=2.11.8,<3.0.0
+- **deps**: update dependency django-stubs-ext to >=5.2.5
+- **deps**: update dependency django-stubs-ext to >=5.2.4
+- **deps**: update dependency pydantic to >=2.11.7,<3.0.0
+- **deps**: update dependency djangorestframework to >=3.16.1
+- **deps**: update dependency django-stubs-ext to >=5.2.2
+- prevent renovate from pointing all URLs at gitlab
+
 ## v0.1.1 (2025-09-03)
 
 ### Fix
