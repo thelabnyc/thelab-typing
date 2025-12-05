@@ -1,9 +1,14 @@
+from collections.abc import Callable
+from unittest.mock import Mock
+
 from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
+from django.http import HttpRequest, HttpResponse, HttpResponseBase
 from django.test import Client, TestCase
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 
-from thelabtyping.api.routing import HttpMethod, Router
+from thelabtyping.api.routing import HttpMethod, Route, Router
 from thelabtyping.api.status import Status
 
 from ..sampleapp.views import (
@@ -160,3 +165,166 @@ class RouterTest(TestCase):
                 HttpMethod.POST,
             },
         )
+
+
+class TestRouteDecorators(TestCase):
+    """Tests for Route and Router decorator support."""
+
+    def _dummy_view(
+        self, request: HttpRequest, *args: object, **kwargs: object
+    ) -> HttpResponse:
+        """A simple view function for testing."""
+        return HttpResponse("OK")
+
+    def test_route_without_decorators_returns_dispatch(self) -> None:
+        """Routes without decorators should return dispatch unchanged."""
+        router = Router(enable_index=False)
+        route = router.route("test/", name="test", get=self._dummy_view)
+        # Without decorators, view should be the same as dispatch
+        self.assertEqual(route.view, route.dispatch)
+
+    def test_route_with_csrf_exempt_decorator(self) -> None:
+        """csrf_exempt decorator should set attribute on view."""
+        router = Router(enable_index=False)
+        route = router.route(
+            "test/",
+            name="test",
+            get=self._dummy_view,
+            decorators=[csrf_exempt],
+        )
+        # The view property should have csrf_exempt attribute
+        self.assertTrue(hasattr(route.view, "csrf_exempt"))
+        self.assertTrue(route.view.csrf_exempt)  # type: ignore[attr-defined]
+
+    def test_multiple_decorators_applied_in_order(self) -> None:
+        """Decorators are applied in list order (last is outermost)."""
+        call_order: list[str] = []
+
+        def decorator_a(
+            fn: Callable[..., HttpResponseBase],
+        ) -> Callable[..., HttpResponseBase]:
+            def wrapper(
+                request: HttpRequest, *args: object, **kwargs: object
+            ) -> HttpResponseBase:
+                call_order.append("a")
+                return fn(request, *args, **kwargs)
+
+            return wrapper
+
+        def decorator_b(
+            fn: Callable[..., HttpResponseBase],
+        ) -> Callable[..., HttpResponseBase]:
+            def wrapper(
+                request: HttpRequest, *args: object, **kwargs: object
+            ) -> HttpResponseBase:
+                call_order.append("b")
+                return fn(request, *args, **kwargs)
+
+            return wrapper
+
+        router = Router(enable_index=False)
+        route = router.route(
+            "test/",
+            name="test",
+            get=self._dummy_view,
+            decorators=[decorator_a, decorator_b],
+        )
+
+        # Call the decorated view
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        route.view(request)
+
+        # decorator_b is outermost (applied last), called first
+        self.assertEqual(call_order, ["b", "a"])
+
+    def test_view_property_is_cached(self) -> None:
+        """Multiple calls to .view return same instance."""
+        router = Router(enable_index=False)
+        route = router.route(
+            "test/",
+            name="test",
+            get=self._dummy_view,
+            decorators=[csrf_exempt],
+        )
+        view1 = route.view
+        view2 = route.view
+        self.assertIs(view1, view2)
+
+    def test_router_urls_uses_decorated_view(self) -> None:
+        """Router.urls should use route.view, not route.dispatch."""
+        router = Router(enable_index=False)
+        router.route(
+            "test/",
+            name="test",
+            get=self._dummy_view,
+            decorators=[csrf_exempt],
+        )
+        urls = router.urls
+        self.assertEqual(len(urls), 1)
+        url_pattern = urls[0]
+        # The callback should be the decorated view with csrf_exempt
+        self.assertTrue(hasattr(url_pattern.callback, "csrf_exempt"))
+        self.assertTrue(url_pattern.callback.csrf_exempt)  # type: ignore[attr-defined]
+
+    def test_router_level_decorators_apply_to_all_routes(self) -> None:
+        """Router-level decorators should apply to all routes."""
+        router = Router(enable_index=False, decorators=[csrf_exempt])
+        route1 = router.route("test1/", name="test1", get=self._dummy_view)
+        route2 = router.route("test2/", name="test2", get=self._dummy_view)
+
+        # Both routes should have csrf_exempt applied
+        self.assertTrue(hasattr(route1.view, "csrf_exempt"))
+        self.assertTrue(route1.view.csrf_exempt)  # type: ignore[attr-defined]
+        self.assertTrue(hasattr(route2.view, "csrf_exempt"))
+        self.assertTrue(route2.view.csrf_exempt)  # type: ignore[attr-defined]
+
+    def test_router_and_route_decorators_combined(self) -> None:
+        """Router decorators apply first (inner), route decorators on top (outer)."""
+        call_order: list[str] = []
+
+        def router_decorator(
+            fn: Callable[..., HttpResponseBase],
+        ) -> Callable[..., HttpResponseBase]:
+            def wrapper(
+                request: HttpRequest, *args: object, **kwargs: object
+            ) -> HttpResponseBase:
+                call_order.append("router")
+                return fn(request, *args, **kwargs)
+
+            return wrapper
+
+        def route_decorator(
+            fn: Callable[..., HttpResponseBase],
+        ) -> Callable[..., HttpResponseBase]:
+            def wrapper(
+                request: HttpRequest, *args: object, **kwargs: object
+            ) -> HttpResponseBase:
+                call_order.append("route")
+                return fn(request, *args, **kwargs)
+
+            return wrapper
+
+        router = Router(enable_index=False, decorators=[router_decorator])
+        route = router.route(
+            "test/",
+            name="test",
+            get=self._dummy_view,
+            decorators=[route_decorator],
+        )
+
+        # Call the decorated view
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        route.view(request)
+
+        # Route decorator is outermost, called first
+        self.assertEqual(call_order, ["route", "router"])
+
+    def test_route_created_outside_router_with_decorators(self) -> None:
+        """Route can be created directly with decorators."""
+        route = Route(name="test", decorators=[csrf_exempt])
+        route.get(self._dummy_view)
+
+        self.assertTrue(hasattr(route.view, "csrf_exempt"))
+        self.assertTrue(route.view.csrf_exempt)  # type: ignore[attr-defined]

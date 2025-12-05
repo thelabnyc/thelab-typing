@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from functools import reduce
@@ -29,6 +29,10 @@ URLPatternStr = NewType("URLPatternStr", str)
 AllowedMethods = set[HttpMethod]
 
 type ViewFn[**P, R: HttpResponseBase] = Callable[Concatenate[HttpRequest, P], R]
+type ViewDecorator = Callable[
+    [Callable[..., HttpResponseBase]],
+    Callable[..., HttpResponseBase],
+]
 
 ALL_METHODS: AllowedMethods = {
     HttpMethod.GET,
@@ -53,11 +57,22 @@ class Route:
 
     name: str
     views: list[RegisteredView[[], HttpResponseBase]]
+    decorators: Sequence[ViewDecorator]
+    _router_decorators: Sequence[ViewDecorator]
+    _cached_view: Callable[..., HttpResponseBase] | None
 
-    def __init__(self, name: str) -> None:
-        """Initialize a new route with the given name."""
+    def __init__(
+        self,
+        name: str,
+        decorators: Sequence[ViewDecorator] | None = None,
+        router_decorators: Sequence[ViewDecorator] | None = None,
+    ) -> None:
+        """Initialize a new route with the given name and optional decorators."""
         self.name = name
         self.views = []
+        self.decorators = decorators or []
+        self._router_decorators = router_decorators or []
+        self._cached_view = None
 
     def get[**P, R: HttpResponseBase](self, fn: ViewFn[P, R]) -> ViewFn[P, R]:
         """Register a view function for GET requests."""
@@ -131,6 +146,24 @@ class Route:
         """Get all HTTP methods supported by this route."""
         return reduce(or_, (view.methods for view in self.views), set())
 
+    @property
+    def view(self) -> Callable[..., HttpResponseBase]:
+        """Get dispatch with all decorators applied (router-level first, then route-level)."""
+        if self._cached_view is None:
+            # No decorators - return dispatch directly
+            if not self.decorators and not self._router_decorators:
+                self._cached_view = self.dispatch
+            else:
+                result: Callable[..., HttpResponseBase] = self.dispatch
+                # Apply router-level decorators first (innermost)
+                for decorator in self._router_decorators:
+                    result = decorator(result)
+                # Apply route-level decorators on top (outermost)
+                for decorator in self.decorators:
+                    result = decorator(result)
+                self._cached_view = result
+        return self._cached_view
+
 
 type RouteMap = dict[URLPatternStr, Route]
 
@@ -143,15 +176,18 @@ class Router:
 
     basename: str | None = None
     routes: RouteMap
+    decorators: Sequence[ViewDecorator]
 
     def __init__(
         self,
         basename: str | None = None,
         enable_index: bool = True,
+        decorators: Sequence[ViewDecorator] | None = None,
     ) -> None:
-        """Initialize a new router with optional basename and index view."""
+        """Initialize a new router with optional basename, index view, and decorators."""
         self.basename = basename
         self.routes: RouteMap = {}
+        self.decorators = decorators or []
         # Immediately register the root index view
         if enable_index:
             self.route("", name="index", get=self.index_view)
@@ -181,8 +217,9 @@ class Router:
         put: ViewFn[P, R] | None = None,
         patch: ViewFn[P, R] | None = None,
         delete: ViewFn[P, R] | None = None,
+        decorators: Sequence[ViewDecorator] | None = None,
     ) -> Route:
-        """Register a new route with the given URL pattern and view functions."""
+        """Register a new route with the given URL pattern, view functions, and decorators."""
         _pattern = URLPatternStr(url_pattern)
         if _pattern in self.routes:
             raise ImproperlyConfigured(
@@ -190,7 +227,7 @@ class Router:
             )
         # Create route
         name = f"{self.basename}-{name}" if self.basename is not None else name
-        route = Route(name)
+        route = Route(name, decorators=decorators, router_decorators=self.decorators)
         # Register any provided views
         views: dict[HttpMethod, ViewFn[P, R] | None] = {
             HttpMethod.GET: get,
@@ -210,6 +247,6 @@ class Router:
     def urls(self) -> list[URLPattern]:
         """Get Django URLPattern objects for all registered routes."""
         return [
-            path(pattern, route.dispatch, name=route.name)
+            path(pattern, route.view, name=route.name)
             for pattern, route in self.routes.items()
         ]
