@@ -58,15 +58,16 @@ class APIResponse[T: pydantic.BaseModel](HttpResponse):
         reason: str | None = None,
         charset: str | None = None,
         headers: dict[str, str] | None = None,
+        exclude_none: bool = False,
     ):
         """Create an API response from a Pydantic model or Result type."""
         data: str = ""
         if isinstance(maybe_obj, pydantic.BaseModel):
             obj = maybe_obj
-            data = obj.model_dump_json()
+            data = obj.model_dump_json(exclude_none=exclude_none)
         elif isinstance(maybe_obj, Ok):
             obj = maybe_obj.ok()
-            data = obj.model_dump_json()
+            data = obj.model_dump_json(exclude_none=exclude_none)
         elif isinstance(maybe_obj, Err):
             exc = maybe_obj.err()
             # If not a validation error, raise the error and let Django handle it

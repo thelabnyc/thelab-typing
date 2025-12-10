@@ -1,14 +1,17 @@
 from collections.abc import Callable
 from unittest.mock import Mock
+import json
 
 from django.contrib.auth.models import User
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponse, HttpResponseBase
-from django.test import Client, TestCase
-from django.urls import reverse
+from django.test import Client, TestCase, override_settings
+from django.urls import include, path, reverse
 from django.views.decorators.csrf import csrf_exempt
 
-from thelabtyping.api.routing import HttpMethod, Route, Router
+from thelabtyping.api.openapi import OpenAPISchema
+from thelabtyping.api.openapi.models import Server
+from thelabtyping.api.routing import HttpMethod, Route, Router, URLPatternStr
 from thelabtyping.api.status import Status
 
 from ..sampleapp.views import (
@@ -328,3 +331,343 @@ class TestRouteDecorators(TestCase):
 
         self.assertTrue(hasattr(route.view, "csrf_exempt"))
         self.assertTrue(route.view.csrf_exempt)  # type: ignore[attr-defined]
+
+
+class TestAutoOpenAPI(TestCase):
+    """Tests for auto-OpenAPI endpoint feature."""
+
+    def test_openapi_disabled_by_default(self) -> None:
+        """No openapi route when no config provided."""
+        router = Router(enable_index=False)
+        router.route("users/", name="users")
+
+        # Should not have openapi.json route
+        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        self.assertNotIn("openapi.json", route_patterns)
+
+    def test_openapi_endpoint_registered(self) -> None:
+        """OpenAPI route is registered when schemas is provided."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                ),
+            },
+        )
+        router.route("users/", name="users")
+
+        # Should have openapi.json route
+        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        self.assertIn("openapi.json", route_patterns)
+
+    def test_openapi_custom_url_pattern(self) -> None:
+        """Custom URL pattern for OpenAPI endpoint."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "docs/openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                ),
+            },
+        )
+
+        # Should have custom route
+        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        self.assertIn("docs/openapi.json", route_patterns)
+        self.assertNotIn("openapi.json", route_patterns)
+
+    def test_openapi_serves_valid_spec(self) -> None:
+        """OpenAPI endpoint returns valid OpenAPI JSON."""
+        router = Router(
+            basename="test",
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="2.0.0",
+                    description="A test API",
+                    cache_timeout=None,  # Disable caching for test with mock request
+                    require_auth=False,  # Disable auth for unit test
+                ),
+            },
+        )
+        router.route("users/", name="users")
+
+        # Get the openapi route
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        self.assertIsNotNone(openapi_route)
+        assert openapi_route is not None  # for mypy
+
+        # Create a mock request with resolver_match for namespace
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        request.build_absolute_uri = Mock(return_value="http://testserver/")
+        request.resolver_match = Mock()
+        request.resolver_match.namespace = "test"
+
+        # Set up URL config for reverse() to work
+        class TestURLConf:
+            urlpatterns = [
+                path("test/", include((router.urls, "test"))),
+            ]
+
+        # Call the view with URL config in place
+        with override_settings(ROOT_URLCONF=TestURLConf):
+            response = openapi_route.view(request)
+
+        # Check response
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/json")
+
+        # Parse and validate the JSON
+        assert hasattr(response, "content")  # APIResponse has content
+        data = json.loads(response.content)
+        self.assertEqual(data["openapi"], "3.1.0")
+        self.assertEqual(data["info"]["title"], "Test API")
+        self.assertEqual(data["info"]["version"], "2.0.0")
+        self.assertEqual(data["info"]["description"], "A test API")
+        self.assertIn("/test/users/", data["paths"])
+        self.assertIn("/test/openapi.json", data["paths"])
+
+    def test_openapi_requires_auth_by_default(self) -> None:
+        """OpenAPI endpoint requires authentication by default."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                    cache_timeout=None,  # Disable caching for test
+                ),
+            },
+        )
+
+        # Get the openapi route
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        self.assertIsNotNone(openapi_route)
+        assert openapi_route is not None
+
+        # Create a mock request with anonymous user
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        request.user = Mock()
+        request.user.is_anonymous = True
+
+        # Call the view - should return 403
+        response = openapi_route.view(request)
+        self.assertEqual(response.status_code, Status.HTTP_403_FORBIDDEN)
+
+    def test_openapi_allows_authenticated_users(self) -> None:
+        """OpenAPI endpoint allows authenticated users when auth is required."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                    cache_timeout=None,  # Disable caching for test
+                ),
+            },
+        )
+
+        # Get the openapi route
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        self.assertIsNotNone(openapi_route)
+        assert openapi_route is not None
+
+        # Create a mock request with authenticated user
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        request.user = Mock()
+        request.user.is_anonymous = False
+        request.build_absolute_uri = Mock(return_value="http://testserver/")
+        request.resolver_match = Mock()
+        request.resolver_match.namespace = "test"
+
+        # Set up URL config for reverse() to work
+        class TestURLConf:
+            urlpatterns = [
+                path("test/", include((router.urls, "test"))),
+            ]
+
+        # Call the view - should return 200
+        with override_settings(ROOT_URLCONF=TestURLConf):
+            response = openapi_route.view(request)
+        self.assertEqual(response.status_code, Status.HTTP_200_OK)
+
+        # Verify it's valid JSON
+        self.assertIsInstance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
+        data = json.loads(response.content)
+        self.assertEqual(data["openapi"], "3.1.0")
+
+    def test_openapi_public_when_auth_disabled(self) -> None:
+        """OpenAPI endpoint is public when require_auth is False."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                    cache_timeout=None,
+                    require_auth=False,  # Allow public access
+                ),
+            },
+        )
+
+        # Get the openapi route
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        self.assertIsNotNone(openapi_route)
+        assert openapi_route is not None
+
+        # Create a mock request with anonymous user
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        request.user = Mock()
+        request.user.is_anonymous = True
+        request.build_absolute_uri = Mock(return_value="http://testserver/")
+        request.resolver_match = Mock()
+        request.resolver_match.namespace = "test"
+
+        # Set up URL config for reverse() to work
+        class TestURLConf:
+            urlpatterns = [
+                path("test/", include((router.urls, "test"))),
+            ]
+
+        # Call the view - should return 200 even for anonymous user
+        with override_settings(ROOT_URLCONF=TestURLConf):
+            response = openapi_route.view(request)
+        self.assertEqual(response.status_code, Status.HTTP_200_OK)
+
+        # Verify it's valid JSON
+        self.assertIsInstance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
+        data = json.loads(response.content)
+        self.assertEqual(data["openapi"], "3.1.0")
+
+    def test_openapi_caching_enabled_by_default(self) -> None:
+        """OpenAPI schema generator has caching enabled by default (3600 seconds)."""
+        schema = OpenAPISchema(
+            title="Test API",
+            version="1.0.0",
+        )
+
+        # Default cache_timeout is 3600
+        self.assertEqual(schema.cache_timeout, 3600)
+
+    def test_openapi_caching_disabled_when_none(self) -> None:
+        """OpenAPI schema generator can have caching disabled."""
+        schema = OpenAPISchema(
+            title="Test API",
+            version="1.0.0",
+            cache_timeout=None,
+        )
+
+        # cache_timeout is None when disabled
+        self.assertIsNone(schema.cache_timeout)
+
+    def test_openapi_custom_cache_timeout(self) -> None:
+        """OpenAPI schema generator respects custom cache_timeout value."""
+        schema = OpenAPISchema(
+            title="Test API",
+            version="1.0.0",
+            cache_timeout=7200,  # 2 hours
+        )
+
+        # Custom cache_timeout is preserved
+        self.assertEqual(schema.cache_timeout, 7200)
+
+    def test_openapi_auto_populates_servers_from_request(self) -> None:
+        """OpenAPI spec auto-populates servers from request when not provided."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                    cache_timeout=None,
+                    require_auth=False,
+                    # No servers provided - should auto-populate
+                ),
+            },
+        )
+
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        assert openapi_route is not None
+
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        request.build_absolute_uri = Mock(return_value="https://api.example.com/")
+        request.resolver_match = Mock()
+        request.resolver_match.namespace = "test"
+
+        # Set up URL config for reverse() to work
+        class TestURLConf:
+            urlpatterns = [
+                path("test/", include((router.urls, "test"))),
+            ]
+
+        with override_settings(ROOT_URLCONF=TestURLConf):
+            response = openapi_route.view(request)
+        self.assertEqual(response.status_code, Status.HTTP_200_OK)
+
+        self.assertIsInstance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
+        data = json.loads(response.content)
+
+        # Server should be auto-populated from request
+        self.assertIn("servers", data)
+        self.assertEqual(len(data["servers"]), 1)
+        self.assertEqual(data["servers"][0]["url"], "https://api.example.com")
+
+    def test_openapi_uses_explicit_servers_when_provided(self) -> None:
+        """OpenAPI spec uses explicit servers when provided."""
+        router = Router(
+            enable_index=False,
+            schemas={
+                "openapi.json": OpenAPISchema(
+                    title="Test API",
+                    version="1.0.0",
+                    cache_timeout=None,
+                    require_auth=False,
+                    servers=[
+                        Server(url="https://prod.example.com"),
+                        Server(url="https://staging.example.com"),
+                    ],
+                ),
+            },
+        )
+
+        openapi_route = router.routes.get(URLPatternStr("openapi.json"))
+        assert openapi_route is not None
+
+        request = Mock(spec=HttpRequest)
+        request.method = "GET"
+        # This should be ignored when servers are explicitly provided
+        request.build_absolute_uri = Mock(return_value="https://ignored.example.com/")
+        request.resolver_match = Mock()
+        request.resolver_match.namespace = "test"
+
+        # Set up URL config for reverse() to work
+        class TestURLConf:
+            urlpatterns = [
+                path("test/", include((router.urls, "test"))),
+            ]
+
+        with override_settings(ROOT_URLCONF=TestURLConf):
+            response = openapi_route.view(request)
+        self.assertEqual(response.status_code, Status.HTTP_200_OK)
+
+        self.assertIsInstance(response, HttpResponse)
+        assert isinstance(response, HttpResponse)
+        data = json.loads(response.content)
+
+        # Explicit servers should be used, not auto-populated
+        self.assertIn("servers", data)
+        self.assertEqual(len(data["servers"]), 2)
+        self.assertEqual(data["servers"][0]["url"], "https://prod.example.com")
+        self.assertEqual(data["servers"][1]["url"], "https://staging.example.com")
