@@ -1,9 +1,11 @@
-from collections.abc import Callable, Sequence
+from __future__ import annotations
+
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass
 from enum import StrEnum
 from functools import reduce
 from operator import or_
-from typing import Concatenate, NewType
+from typing import Concatenate, NewType, Protocol
 
 from django.core.exceptions import ImproperlyConfigured
 from django.http import HttpRequest, HttpResponseBase, HttpResponseNotAllowed
@@ -168,6 +170,35 @@ class Route:
 type RouteMap = dict[URLPatternStr, Route]
 
 
+class SchemaGenerator(Protocol):
+    """Protocol for API schema generators (OpenAPI, etc.).
+
+    Schema generators handle the full view logic including authentication,
+    caching, and response serialization. The Router treats them as views.
+
+    Example implementation:
+        @dataclass
+        class MySchemaGenerator:
+            def __call__(
+                self, router: Router, request: HttpRequest
+            ) -> HttpResponseBase:
+                spec = generate_my_schema(router.routes)
+                return APIResponse(spec)
+    """
+
+    def __call__(self, router: Router, request: HttpRequest) -> HttpResponseBase:
+        """Handle a schema request.
+
+        Args:
+            router: The Router instance (provides access to routes).
+            request: The incoming HTTP request.
+
+        Returns:
+            An HTTP response (typically APIResponse with serialized schema).
+        """
+        ...
+
+
 RouterIndex = DictOf[str, pydantic.HttpUrl]
 
 
@@ -177,20 +208,42 @@ class Router:
     basename: str | None = None
     routes: RouteMap
     decorators: Sequence[ViewDecorator]
+    _schemas: Mapping[str, SchemaGenerator]
 
     def __init__(
         self,
         basename: str | None = None,
         enable_index: bool = True,
+        schemas: Mapping[str, SchemaGenerator] | None = None,
         decorators: Sequence[ViewDecorator] | None = None,
     ) -> None:
         """Initialize a new router with optional basename, index view, and decorators."""
         self.basename = basename
         self.routes: RouteMap = {}
         self.decorators = decorators or []
+        self._schemas = schemas or {}
         # Immediately register the root index view
         if enable_index:
             self.route("", name="index", get=self.index_view)
+
+        # Register schema endpoints - generator handles ALL view logic (auth, caching, response)
+        # Create a view that passes self (router) to the generator
+        def make_schema_view(
+            gen: SchemaGenerator,
+        ) -> Callable[[HttpRequest], HttpResponseBase]:
+            def view(request: HttpRequest) -> HttpResponseBase:
+                return gen(self, request)
+
+            return view
+
+        for url_pattern, generator in self._schemas.items():
+            route_name = url_pattern.lower().replace(".", "-")
+            route_name = f"schema-{route_name}"
+            self.route(
+                url_pattern,
+                name=route_name,
+                get=make_schema_view(generator),
+            )
 
     def index_view(self, request: HttpRequest) -> APIResponse[RouterIndex]:
         """Auto-generated index view listing all available routes."""
