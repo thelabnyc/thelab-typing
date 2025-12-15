@@ -70,3 +70,19 @@ class APIObj[_DjangoType](pydantic.BaseModel):
             )
         APIList = cls.get_list_model()
         return APIList(oks), errs
+
+    def create(self, request: HttpRequest) -> Result[_DjangoType, Exception]:
+        """Create a new model instance from this API model."""
+        raise NotImplementedError  # pragma: no cover
+
+    def update(
+        self, request: HttpRequest, instance: _DjangoType
+    ) -> Result[_DjangoType, Exception]:
+        """Update an existing model instance with data from this API model."""
+        raise NotImplementedError  # pragma: no cover
+
+    def patch(
+        self, request: HttpRequest, instance: _DjangoType
+    ) -> Result[_DjangoType, Exception]:
+        """Partially update an existing model instance with data from this API model."""
+        raise NotImplementedError  # pragma: no cover
