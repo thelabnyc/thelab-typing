@@ -1,4 +1,4 @@
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import NamedTuple
 
 from django.db.models import Model, QuerySet
@@ -22,7 +22,6 @@ type ViewFn = Callable[..., HttpResponseBase]
 
 # Default pagination settings
 DEFAULT_PAGE_SIZE = 100
-DEFAULT_ORDERING: Sequence[str] = ("pk",)
 
 
 class CRUDViews[_ModelT: Model, _PKT](NamedTuple):
@@ -63,7 +62,20 @@ def build_crud_resource_views[
         QuerySet[_ModelT],
     ]
     | None = None,
-    ordering: Sequence[str] | None = None,
+    sort_queryset: Callable[
+        [TypedRequestQuery[_ListFilters], QuerySet[_ModelT]],
+        QuerySet[_ModelT],
+    ]
+    | None = None,
+    get_object: Callable[
+        [
+            EmptyTypedRequest | TypedRequestBody[APIObj[_ModelT]],
+            QuerySet[_ModelT],
+            _PKT,
+        ],
+        _ModelT,
+    ]
+    | None = None,
 ) -> CRUDViews[_ModelT, _PKT]:
     """
     Build type-safe CRUD views for a Django model.
@@ -83,7 +95,13 @@ def build_crud_resource_views[
             Used by all views (list, detail, update, patch, delete).
         filter_queryset: Optional function to filter the queryset for list view only.
             Receives the typed request with validated query params and base queryset.
-        ordering: List of field names to order by
+        sort_queryset: Custom function to sort the queryset for list view only.
+            Receives the typed request with validated query params and base queryset.
+            Defaults to ordering by pk.
+        get_object: Custom function to retrieve a single object for detail views.
+            Receives the typed request, base queryset, and lookup value.
+            Should raise Http404 if object not found. Defaults to
+            get_object_or_404(queryset, pk=lookup_value).
 
     Returns:
         CRUDViews NamedTuple with all generated view functions
@@ -99,8 +117,24 @@ def build_crud_resource_views[
     ) -> QuerySet[_ModelT]:
         return ModelKlass._default_manager.all()
 
+    # Default sort function. Orders by pk for consistent pagination.
+    def default_sort_queryset(
+        request: TypedRequestQuery[_ListFilters],
+        queryset: QuerySet[_ModelT],
+    ) -> QuerySet[_ModelT]:
+        return queryset.order_by("pk")
+
+    # Default object lookup function. Uses pk field for lookups.
+    def default_get_object(
+        request: EmptyTypedRequest | TypedRequestBody[APIObj[_ModelT]],
+        queryset: QuerySet[_ModelT],
+        pk: _PKT,
+    ) -> _ModelT:
+        return get_object_or_404(queryset, pk=pk)
+
     _get_queryset = get_queryset or default_get_queryset
-    _ordering = list(ordering) if ordering else list(DEFAULT_ORDERING)
+    _sort_queryset = sort_queryset or default_sort_queryset
+    _get_object = get_object or default_get_object
 
     # -------------------------------------------------------------------------
     # List View
@@ -111,7 +145,8 @@ def build_crud_resource_views[
     ) -> HttpResponse:
         """List all objects with pagination."""
         params = request.validated_querystring
-        qs = _get_queryset(request).order_by(*_ordering)
+        qs = _get_queryset(request)
+        qs = _sort_queryset(request, qs)
         if filter_queryset is not None:
             qs = filter_queryset(request, qs)
 
@@ -147,9 +182,9 @@ def build_crud_resource_views[
         request: EmptyTypedRequest,
         pk: _PKT,
     ) -> HttpResponse:
-        """Get a single object by primary key."""
+        """Get a single object by lookup value."""
         qs = _get_queryset(request)
-        obj = get_object_or_404(qs, pk=pk)
+        obj = _get_object(request, qs, pk)
         result = ReadSchema.from_django(request, obj)
         return APIResponse(result)
 
@@ -190,7 +225,7 @@ def build_crud_resource_views[
         ) -> HttpResponse:
             """Update an existing object (full replacement)."""
             qs = _get_queryset(request)
-            obj = get_object_or_404(qs, pk=pk)
+            obj = _get_object(request, qs, pk)
             update_result = request.validated_body.update(request, obj)
             if update_result.is_err:
                 return APIResponse(
@@ -215,7 +250,7 @@ def build_crud_resource_views[
         ) -> HttpResponse:
             """Partially update an existing object."""
             qs = _get_queryset(request)
-            obj = get_object_or_404(qs, pk=pk)
+            obj = _get_object(request, qs, pk)
             patch_result = request.validated_body.patch(request, obj)
             if patch_result.is_err:
                 return APIResponse(
@@ -237,7 +272,7 @@ def build_crud_resource_views[
     ) -> HttpResponse:
         """Delete an object."""
         qs = _get_queryset(request)
-        obj = get_object_or_404(qs, pk=pk)
+        obj = _get_object(request, qs, pk)
         obj.delete()
         return APIResponse(Ok(Empty()), status=Status.HTTP_204_NO_CONTENT)
 
