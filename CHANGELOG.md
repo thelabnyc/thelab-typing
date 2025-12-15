@@ -1,5 +1,11 @@
 # Changes
 
+## v1.0.1 (2025-12-15)
+
+### Fix
+
+- support alternate lookup fields on CRUD resources
+
 ## v1.0.0 (2025-12-15)
 
 ### Feat
