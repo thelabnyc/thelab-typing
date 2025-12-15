@@ -1,5 +1,15 @@
 # Changes
 
+## v1.0.0 (2025-12-15)
+
+### Feat
+
+- adds view utilities to reduce boilerplate when creating typical CRUD views
+- add OpenAPI 3.1 spec generation with auto-endpoint support
+
+
+- drop support for django <= 5.1
+
 ## v0.2.0 (2025-12-05)
 
 ### Feat
