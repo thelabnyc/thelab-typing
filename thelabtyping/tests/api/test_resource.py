@@ -6,7 +6,9 @@ from typing import Self
 import json
 
 from django.contrib.auth.models import User
+from django.db.models import QuerySet
 from django.http import HttpRequest
+from django.shortcuts import get_object_or_404
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import include, path
 import pydantic
@@ -105,6 +107,16 @@ class UserListQuery(pydantic.BaseModel):
 # Test URL Configuration using build_crud_resource_views
 # =============================================================================
 test_router = Router(enable_index=False)
+
+
+def sort_by_username(
+    request: HttpRequest,
+    queryset: QuerySet[User],
+) -> QuerySet[User]:
+    """Sort users by username."""
+    return queryset.order_by("username")
+
+
 test_router.register_resource(
     basename="user",
     list_pattern="users/",
@@ -118,7 +130,7 @@ test_router.register_resource(
         UpdateSchema=UserUpdate,
         PatchSchema=UserPatch,
         default_page_size=10,
-        ordering=["username"],
+        sort_queryset=sort_by_username,
     ),
     # Explicitly disable permissions for basic CRUD tests
     list_permissions=[],
@@ -176,8 +188,8 @@ class CRUDListViewTest(TestCase):
         self.assertIsNotNone(data["next"])
         self.assertIsNone(data["previous"])
 
-    def test_list_respects_ordering(self) -> None:
-        """List endpoint respects ordering."""
+    def test_list_respects_sort_queryset(self) -> None:
+        """List endpoint respects sort_queryset callable."""
         User.objects.create_user(username="zebra")
         User.objects.create_user(username="apple")
 
@@ -1008,3 +1020,153 @@ class ListViewEdgeCasesTest(TestCase):
         resp = self.client.get("/api/users/?page_size=-1")
 
         self.assertEqual(resp.status_code, Status.HTTP_400_BAD_REQUEST)
+
+
+# =============================================================================
+# Custom get_object Tests
+# =============================================================================
+
+
+def get_user_by_username(
+    request: HttpRequest,
+    queryset: QuerySet[User],
+    username: str,
+) -> User:
+    """Custom get_object that looks up users by username."""
+    return get_object_or_404(queryset, username=username)
+
+
+get_object_router = Router(enable_index=False)
+get_object_router.register_resource(
+    basename="username-user",
+    list_pattern="username-users/",
+    detail_pattern="username-users/<str:pk>/",  # pk is the URL param, but looks up by username
+    views=build_crud_resource_views(
+        ModelKlass=User,
+        pk_type=str,
+        ListFilters=PaginationParams,
+        ReadSchema=UserRead,
+        CreateSchema=UserCreate,
+        UpdateSchema=UserUpdate,
+        PatchSchema=UserPatch,
+        sort_queryset=sort_by_username,
+        get_object=get_user_by_username,
+    ),
+    list_permissions=[],
+    detail_permissions=[],
+    create_permissions=[],
+    update_permissions=[],
+    patch_permissions=[],
+    delete_permissions=[],
+)
+
+
+class GetObjectTestURLConf:
+    """URL configuration for get_object tests."""
+
+    urlpatterns = [
+        path("api/", include((get_object_router.urls, "get_object_test"))),
+    ]
+
+
+@override_settings(ROOT_URLCONF=GetObjectTestURLConf)
+class GetObjectTest(TestCase):
+    """Tests for get_object parameter in build_crud_resource_views."""
+
+    def setUp(self) -> None:
+        self.target_user = User.objects.create_user(
+            username="target_user", first_name="Target", last_name="User"
+        )
+        self.other_user = User.objects.create_user(
+            username="other_user", first_name="Other", last_name="User"
+        )
+        self.client = Client()
+
+    def test_detail_view_with_custom_get_object(self) -> None:
+        """Detail view uses custom get_object to look up by username."""
+        # Access by username, not by pk
+        resp = self.client.get("/api/username-users/target_user/")
+
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        data = json.loads(resp.content)
+        self.assertEqual(data["username"], "target_user")
+        self.assertEqual(data["first_name"], "Target")
+
+    def test_detail_view_returns_404_for_nonexistent_username(self) -> None:
+        """Detail view returns 404 when custom get_object raises Http404."""
+        resp = self.client.get("/api/username-users/nonexistent/")
+
+        self.assertEqual(resp.status_code, Status.HTTP_404_NOT_FOUND)
+
+    def test_update_view_with_custom_get_object(self) -> None:
+        """Update view uses custom get_object to look up by username."""
+        resp = self.client.put(
+            "/api/username-users/target_user/",
+            content_type="application/json",
+            data={
+                "username": "updated_user",
+                "first_name": "Updated",
+                "last_name": "Name",
+            },
+        )
+
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        data = json.loads(resp.content)
+        self.assertEqual(data["username"], "updated_user")
+        self.assertEqual(data["first_name"], "Updated")
+
+        # Verify database was updated
+        self.target_user.refresh_from_db()
+        self.assertEqual(self.target_user.username, "updated_user")
+
+    def test_patch_view_with_custom_get_object(self) -> None:
+        """Patch view uses custom get_object to look up by username."""
+        resp = self.client.patch(
+            "/api/username-users/target_user/",
+            content_type="application/json",
+            data={"first_name": "Patched"},
+        )
+
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        data = json.loads(resp.content)
+        self.assertEqual(data["first_name"], "Patched")
+        self.assertEqual(data["username"], "target_user")  # unchanged
+
+        # Verify database was updated
+        self.target_user.refresh_from_db()
+        self.assertEqual(self.target_user.first_name, "Patched")
+
+    def test_delete_view_with_custom_get_object(self) -> None:
+        """Delete view uses custom get_object to look up by username."""
+        resp = self.client.delete("/api/username-users/target_user/")
+
+        self.assertEqual(resp.status_code, Status.HTTP_204_NO_CONTENT)
+
+        # Verify object was deleted
+        self.assertFalse(User.objects.filter(username="target_user").exists())
+
+    def test_delete_view_returns_404_for_nonexistent_username(self) -> None:
+        """Delete view returns 404 when custom get_object raises Http404."""
+        resp = self.client.delete("/api/username-users/nonexistent/")
+
+        self.assertEqual(resp.status_code, Status.HTTP_404_NOT_FOUND)
+
+
+@override_settings(ROOT_URLCONF=TestURLConf)
+class GetObjectDefaultTest(TestCase):
+    """Tests to verify default get_object behavior uses pk lookup."""
+
+    def setUp(self) -> None:
+        self.target_user = User.objects.create_user(
+            username="target", first_name="Target", last_name="User"
+        )
+        self.client = Client()
+
+    def test_default_get_object_uses_pk(self) -> None:
+        """Default get_object looks up by pk."""
+        resp = self.client.get(f"/api/users/{self.target_user.pk}/")
+
+        self.assertEqual(resp.status_code, Status.HTTP_200_OK)
+        data = json.loads(resp.content)
+        self.assertEqual(data["id"], self.target_user.pk)
+        self.assertEqual(data["username"], "target")
