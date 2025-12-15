@@ -111,7 +111,10 @@ def validate[
     _QST: pydantic.BaseModel,
     _BT: pydantic.BaseModel,
     _UT: AnyUser,
-]() -> Callable[
+](
+    query_model: type[_QST] | None = None,
+    body_model: type[_BT] | None = None,
+) -> Callable[
     [
         Callable[
             Concatenate[TypedRequest[_QST, _BT, _UT], P],
@@ -124,12 +127,18 @@ def validate[
     ],
 ]:
     """
-    Django view decorator which validated and transforms the incoming request
+    Django view decorator which validates and transforms the incoming request
     data into a `TypedRequest` object (a subclass of HttpRequest). Infers the
     Pydantic models used for validation from the type hints on the view itself.
     For that to work correctly, the `request` param should be typed as
     `TypedRequest[Foo, Bar]` or one of the aliases to TypedRequest defined
     above.
+
+    Args:
+        query_model: Optional explicit model for querystring validation.
+            Overrides annotation-inferred type when provided.
+        body_model: Optional explicit model for request body validation.
+            Overrides annotation-inferred type when provided.
     """
 
     def decorator(
@@ -138,8 +147,11 @@ def validate[
         Concatenate[HttpRequest, P],
         R | APIResponse[_QST] | APIResponse[_BT] | HttpResponseForbidden,
     ]:
-        # Extract validation models
-        qs_model, body_model, requires_auth = _infer_request_types(fn)
+        # Extract validation models from annotations
+        inferred_qs, inferred_body, requires_auth = _infer_request_types(fn)
+        # Use explicit models if provided, otherwise use inferred
+        qs_model_final = query_model if query_model is not None else inferred_qs
+        body_model_final = body_model if body_model is not None else inferred_body
 
         @functools.wraps(fn)
         def wrapper(
@@ -159,12 +171,12 @@ def validate[
                 assert_type(req_user, User)
 
             # Validate querystring
-            qs_result = _parse_request_querystring(qs_model, request)
+            qs_result = _parse_request_querystring(qs_model_final, request)
             if qs_result.is_err:
                 return APIResponse(qs_result)
 
             # Validate body
-            body_result = _parse_request_body(body_model, request)
+            body_result = _parse_request_body(body_model_final, request)
             if body_result.is_err:
                 return APIResponse(body_result)
 

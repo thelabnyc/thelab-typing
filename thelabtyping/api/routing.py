@@ -7,13 +7,16 @@ from functools import reduce
 from operator import or_
 from typing import Concatenate, NewType, Protocol
 
+from django.contrib.auth.decorators import permission_required
 from django.core.exceptions import ImproperlyConfigured
+from django.db.models import Model
 from django.http import HttpRequest, HttpResponseBase, HttpResponseNotAllowed
 from django.urls import URLPattern, path, reverse
 from django.urls.exceptions import NoReverseMatch
 import pydantic
 
 from ..abc import DictOf
+from .resource import CRUDViews
 from .responses import APIResponse
 
 
@@ -295,6 +298,161 @@ class Router:
         # Save and return the view
         self.routes[_pattern] = route
         return self.routes[_pattern]
+
+    def register_resource[_ModelT: Model, _PKT](
+        self,
+        *,
+        basename: str,
+        list_pattern: str,
+        detail_pattern: str,
+        views: CRUDViews[_ModelT, _PKT],
+        model: type[_ModelT] | None = None,
+        list_permissions: Sequence[str] | None = None,
+        detail_permissions: Sequence[str] | None = None,
+        create_permissions: Sequence[str] | None = None,
+        update_permissions: Sequence[str] | None = None,
+        patch_permissions: Sequence[str] | None = None,
+        delete_permissions: Sequence[str] | None = None,
+        enable_list: bool = True,
+        enable_detail: bool = True,
+        enable_create: bool = True,
+        enable_update: bool = True,
+        enable_patch: bool = True,
+        enable_delete: bool = True,
+    ) -> tuple[Route | None, Route | None]:
+        """Register CRUD views for a resource with automatic permission handling.
+
+        Permission Resolution:
+            When a permission parameter is None (not provided), permissions are
+            inferred from Django's default model permissions using the model's
+            app_label and model_name:
+            - list_permissions: "{app_label}.view_{model_name}"
+            - detail_permissions: "{app_label}.view_{model_name}"
+            - create_permissions: "{app_label}.add_{model_name}"
+            - update_permissions: "{app_label}.change_{model_name}"
+            - patch_permissions: "{app_label}.change_{model_name}"
+            - delete_permissions: "{app_label}.delete_{model_name}"
+
+            To explicitly disable permission checks for an operation, pass an
+            empty sequence (e.g., list_permissions=[]).
+
+        Args:
+            basename: Base name for URL route names (e.g., "user" -> "user-list")
+            list_pattern: URL pattern for list/create endpoint
+            detail_pattern: URL pattern for detail/update/delete endpoint
+            views: CRUDViews NamedTuple from build_crud_resource_views
+            model: Django model class for inferring default permissions. Required
+                if any permission parameter is None.
+            list_permissions: Permissions for GET list. None=infer, []=none
+            detail_permissions: Permissions for GET detail. None=infer, []=none
+            create_permissions: Permissions for POST. None=infer, []=none
+            update_permissions: Permissions for PUT. None=infer, []=none
+            patch_permissions: Permissions for PATCH. None=infer, []=none
+            delete_permissions: Permissions for DELETE. None=infer, []=none
+            enable_list: Whether to enable the list endpoint
+            enable_detail: Whether to enable the detail endpoint
+            enable_create: Whether to enable the create endpoint
+            enable_update: Whether to enable the update endpoint
+            enable_patch: Whether to enable the patch endpoint
+            enable_delete: Whether to enable the delete endpoint
+
+        Returns:
+            Tuple of (list_route, detail_route), either may be None if disabled
+        """
+
+        def get_default_permission(action: str) -> list[str]:
+            """Get default Django permission for an action (view/add/change/delete)."""
+            if model is None:
+                raise ImproperlyConfigured(
+                    f"Cannot infer {action} permission: 'model' parameter is required "
+                    "when permission parameters are None. Either provide the model "
+                    "class or explicitly set permissions (use [] for no permissions)."
+                )
+            app_label = model._meta.app_label
+            model_name = model._meta.model_name
+            return [f"{app_label}.{action}_{model_name}"]
+
+        def resolve_permissions(
+            explicit: Sequence[str] | None,
+            action: str,
+        ) -> Sequence[str]:
+            """Resolve permissions: explicit value, or infer from model."""
+            if explicit is not None:
+                return explicit
+            return get_default_permission(action)
+
+        def wrap_with_permissions(
+            view: Callable[..., HttpResponseBase] | None,
+            perms: Sequence[str],
+        ) -> Callable[..., HttpResponseBase] | None:
+            """Wrap a view with permission_required decorators."""
+            if view is None:
+                return None
+            if not perms:
+                return view
+            result = view
+            for perm in reversed(perms):
+                result = permission_required(perm, raise_exception=True)(result)
+            return result
+
+        # Resolve all permissions (infer from model if None)
+        resolved_list_perms = resolve_permissions(list_permissions, "view")
+        resolved_detail_perms = resolve_permissions(detail_permissions, "view")
+        resolved_create_perms = resolve_permissions(create_permissions, "add")
+        resolved_update_perms = resolve_permissions(update_permissions, "change")
+        resolved_patch_perms = resolve_permissions(patch_permissions, "change")
+        resolved_delete_perms = resolve_permissions(delete_permissions, "delete")
+
+        list_route: Route | None = None
+        if enable_list or (enable_create and views.create_view):
+            list_route = self.route(
+                list_pattern,
+                name=f"{basename}-list",
+                get=(
+                    wrap_with_permissions(views.list_view, resolved_list_perms)
+                    if enable_list
+                    else None
+                ),
+                post=(
+                    wrap_with_permissions(views.create_view, resolved_create_perms)
+                    if (enable_create and views.create_view)
+                    else None
+                ),
+            )
+
+        detail_route: Route | None = None
+        if (
+            enable_detail
+            or (enable_update and views.update_view)
+            or (enable_patch and views.patch_view)
+            or enable_delete
+        ):
+            detail_route = self.route(
+                detail_pattern,
+                name=f"{basename}-detail",
+                get=(
+                    wrap_with_permissions(views.detail_view, resolved_detail_perms)
+                    if enable_detail
+                    else None
+                ),
+                put=(
+                    wrap_with_permissions(views.update_view, resolved_update_perms)
+                    if enable_update and views.update_view
+                    else None
+                ),
+                patch=(
+                    wrap_with_permissions(views.patch_view, resolved_patch_perms)
+                    if enable_patch and views.patch_view
+                    else None
+                ),
+                delete=(
+                    wrap_with_permissions(views.delete_view, resolved_delete_perms)
+                    if enable_delete
+                    else None
+                ),
+            )
+
+        return (list_route, detail_route)
 
     @property
     def urls(self) -> list[URLPattern]:
