@@ -50,7 +50,7 @@ docs = [
     "mkdocs-section-index (>=0.3.10,<0.4)",
     "mkdocs-pagenav-generator @ git+https://github.com/Andre601/mkdocs-pagenav-generator@acb5b1561695e8f69d67fda029779f40e4b0beef",
     "mkautodoc (>=0.2.0,<0.3)",
-    "django (>=4.2.27,<5.3)",
+    "django (>=5.2,<5.3)",
     "djangorestframework (>=3.16.1)",
 ]
 
