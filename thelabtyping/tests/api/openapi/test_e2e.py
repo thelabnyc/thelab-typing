@@ -1,9 +1,9 @@
 """End-to-end tests for OpenAPI generation with sample app."""
 
+from pathlib import Path
 from typing import Any, ClassVar
 from unittest import TestCase
 import json
-import urllib.request
 
 from django.test import TestCase as DjangoTestCase
 import jsonschema
@@ -226,17 +226,14 @@ class TestOpenAPISpecStructure(TestCase):
 class TestOpenAPISchemaValidation(OpenAPITestMixin, DjangoTestCase):
     """Validate generated OpenAPI specs against the official OpenAPI 3.1 JSON schema."""
 
-    OPENAPI_31_SCHEMA_URL = (
-        "https://schemas.sourcemeta.com/openapi/v3.1/schema/2025-09-15.json"
-    )
+    OPENAPI_31_SCHEMA_PATH = Path(__file__).parent / "fixtures/openapi-3.1-schema.json"
     _schema: ClassVar[dict[str, Any] | None] = None
 
     @classmethod
     def setUpClass(cls) -> None:
-        """Fetch OpenAPI 3.1 JSON schema once for all tests."""
+        """Load OpenAPI 3.1 JSON schema from local file."""
         super().setUpClass()
-        with urllib.request.urlopen(cls.OPENAPI_31_SCHEMA_URL, timeout=30) as response:
-            cls._schema = json.loads(response.read().decode())
+        cls._schema = json.loads(cls.OPENAPI_31_SCHEMA_PATH.read_text())
 
     def _validate_spec(self, spec_data: dict[str, Any]) -> None:
         """Validate spec data against the OpenAPI 3.1 JSON schema."""
