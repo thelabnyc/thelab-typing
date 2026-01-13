@@ -1029,7 +1029,7 @@ dev = [
     { name = "coverage", specifier = ">=7.13.1" },
     { name = "django-stubs", specifier = ">=5.2.8" },
     { name = "djangorestframework-stubs", specifier = ">=3.16.6" },
-    { name = "jsonschema", specifier = ">=4.25.1" },
+    { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = ">=1.19.1" },
     { name = "ruff", specifier = ">=0.14.11" },
     { name = "tox", specifier = ">=4.34.1" },
