@@ -1031,7 +1031,7 @@ dev = [
     { name = "djangorestframework-stubs", specifier = ">=3.16.7" },
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = ">=1.19.1" },
-    { name = "ruff", specifier = ">=0.14.12" },
+    { name = "ruff", specifier = ">=0.14.13" },
     { name = "tox", specifier = ">=4.34.1" },
     { name = "types-jsonschema", specifier = ">=4.26.0.20260109" },
 ]
