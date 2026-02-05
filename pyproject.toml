@@ -40,7 +40,7 @@ dev = [
     "djangorestframework-stubs (>=3.16.7)",
     "tox (>=4.34.1)",
     "jsonschema (>=4.26.0)",
-    "types-jsonschema (>=4.26.0.20260109)",
+    "types-jsonschema (>=4.26.0.20260202)",
 ]
 docs = [
     "mkdocs (>=1.6.1,<2)",
