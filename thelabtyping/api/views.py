@@ -3,7 +3,7 @@ from typing import Concatenate, assert_type, cast, get_args, get_origin, get_typ
 import functools
 
 from django.contrib.auth.models import AnonymousUser, User
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, QueryDict
+from django.http import HttpRequest, HttpResponseBase, HttpResponseForbidden, QueryDict
 import pydantic
 import pydantic_core
 
@@ -59,7 +59,7 @@ def _parse_request_body[_BT: pydantic.BaseModel](
 
 def _infer_request_types[
     **P,
-    R: HttpResponse,
+    R: HttpResponseBase,
     _QST: pydantic.BaseModel,
     _BT: pydantic.BaseModel,
     _UT: AnyUser,
@@ -107,7 +107,7 @@ def _infer_request_types[
 
 def validate[
     **P,
-    R: HttpResponse,
+    R: HttpResponseBase,
     _QST: pydantic.BaseModel,
     _BT: pydantic.BaseModel,
     _UT: AnyUser,
