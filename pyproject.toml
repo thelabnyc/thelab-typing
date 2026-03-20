@@ -24,10 +24,10 @@ Repository = "https://gitlab.com/thelabnyc/thelab-typing"
 [project.optional-dependencies]
 django = [
     "django (>=5.2,<6.1)",
-    "django-stubs-ext (>=5.2.9,<6.1)",
+    "django-stubs-ext (>=6.0.0,<6.1)",
 ]
 drf = [
-    "django-stubs-ext (>=5.2.9)",
+    "django-stubs-ext (>=6.0.0)",
     "djangorestframework (>=3.16.1)",
 ]
 
