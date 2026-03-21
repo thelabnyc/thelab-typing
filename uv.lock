@@ -1074,8 +1074,8 @@ docs = [
 [package.metadata]
 requires-dist = [
     { name = "django", marker = "extra == 'django'", specifier = ">=5.2,<6.1" },
-    { name = "django-stubs-ext", marker = "extra == 'django'", specifier = ">=6.0.0,<6.1" },
-    { name = "django-stubs-ext", marker = "extra == 'drf'", specifier = ">=6.0.0" },
+    { name = "django-stubs-ext", marker = "extra == 'django'", specifier = ">=6.0.1,<6.1" },
+    { name = "django-stubs-ext", marker = "extra == 'drf'", specifier = ">=6.0.1" },
     { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.16.1" },
     { name = "pydantic", specifier = ">=2.12.5,<3.0.0" },
 ]
