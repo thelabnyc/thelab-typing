@@ -1,5 +1,17 @@
 # Changes
 
+## v1.0.2 (2026-03-31)
+
+### Fix
+
+- django-stubs versions
+- **deps**: update dependency djangorestframework to >=3.17.1
+- **deps**: update dependency djangorestframework to >=3.17.0
+- **deps**: update dependency django-stubs-ext to v6.0.1
+- **deps**: update dependency django-stubs-ext to v6.0.0
+- **deps**: update dependency django-stubs-ext to >=5.2.9
+- use local OpenAPI 3.1 schema instead of remote URL
+
 ## v1.0.1 (2025-12-15)
 
 ### Fix
