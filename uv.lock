@@ -1100,7 +1100,7 @@ docs = [
     { name = "mkdocs-material", specifier = ">=9.7.6,<10" },
     { name = "mkdocs-pagenav-generator", git = "https://github.com/Andre601/mkdocs-pagenav-generator?rev=acb5b1561695e8f69d67fda029779f40e4b0beef" },
     { name = "mkdocs-section-index", specifier = ">=0.3.11,<0.4" },
-    { name = "pymdown-extensions", specifier = ">=10.21,<11" },
+    { name = "pymdown-extensions", specifier = ">=10.21.2,<11" },
 ]
 
 [[package]]
