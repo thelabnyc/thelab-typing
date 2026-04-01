@@ -1031,7 +1031,7 @@ wheels = [
 
 [[package]]
 name = "thelab-typing"
-version = "1.0.1"
+version = "1.0.2"
 source = { editable = "." }
 dependencies = [
     { name = "pydantic" },
@@ -1083,7 +1083,7 @@ provides-extras = ["django", "drf"]
 [package.metadata.requires-dev]
 dev = [
     { name = "coverage", specifier = ">=7.13.5" },
-    { name = "django-stubs", specifier = ">=5.2.9" },
+    { name = "django-stubs", specifier = ">=6.0.1" },
     { name = "djangorestframework-stubs", specifier = ">=3.16.8" },
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = ">=1.19.1" },
