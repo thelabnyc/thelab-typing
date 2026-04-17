@@ -38,7 +38,7 @@ dev = [
     "coverage (>=7.13.5)",
     "django-stubs (>=6.0.1)",
     "djangorestframework-stubs (>=3.16.9)",
-    "tox (>=4.52.1)",
+    "tox (>=4.53.0)",
     "jsonschema (>=4.26.0)",
     "types-jsonschema (>=4.26.0.20260408)",
 ]
