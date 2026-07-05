@@ -35,7 +35,7 @@ drf = [
 dev = [
     "mypy (==1.20.0)",
     "ruff (>=0.15.20)",
-    "coverage (>=7.14.3)",
+    "coverage (>=7.15.0)",
     "django-stubs (>=6.0.1)",
     "djangorestframework-stubs (>=3.17.0)",
     "tox (>=4.56.1)",
