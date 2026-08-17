@@ -34,11 +34,11 @@ drf = [
 [dependency-groups]
 dev = [
     "mypy (==1.20.0)",
-    "ruff (>=0.16.2)",
+    "ruff (>=0.16.3)",
     "coverage (>=7.15.4)",
     "django-stubs (>=6.0.1)",
     "djangorestframework-stubs (>=3.18.0)",
-    "tox (>=4.59.0)",
+    "tox (>=4.60.0)",
     "jsonschema (>=4.26.0)",
     "types-jsonschema (>=4.26.0.20260518)",
 ]
