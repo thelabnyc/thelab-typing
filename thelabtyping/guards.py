@@ -25,9 +25,11 @@ def is_literal_factory[T](lit: T) -> Callable[[object], TypeIs[T]]:
         """
         Type guard which narrows a type down to being a member of a Literal
         """
-        # If the literal was defined with the `type` keyword, then we ned to
-        # force it to resolve by getting lit.__value__.
-        resolved_lit = lit.__value__ if (type(lit) is TypeAliasType) else lit
+        # If the literal was defined with the `type` keyword, then we need to
+        # force it to resolve by getting __value__.
+        resolved_lit: object = lit
+        if isinstance(resolved_lit, TypeAliasType):
+            resolved_lit = resolved_lit.__value__
         assert isinstance(resolved_lit, _LiteralGenericAlias)
         return arg in get_args(resolved_lit)
 
