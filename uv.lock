@@ -1296,7 +1296,7 @@ provides-extras = ["django", "drf"]
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "coverage", specifier = ">=7.16.0" },
+    { name = "coverage", specifier = ">=7.16.1" },
     { name = "django-stubs", specifier = ">=6.0.1" },
     { name = "djangorestframework-stubs", specifier = ">=3.18.1" },
     { name = "jsonschema", specifier = ">=4.26.0" },
