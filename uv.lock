@@ -1349,7 +1349,7 @@ dev = [
     { name = "mypy", specifier = "==2.4.0" },
     { name = "ruff", specifier = ">=0.16.10" },
     { name = "tox", specifier = ">=4.64.9" },
-    { name = "types-jsonschema", specifier = ">=4.26.0.20260518" },
+    { name = "types-jsonschema", specifier = ">=4.26.0.20261006" },
 ]
 docs = [
     { name = "django", specifier = ">=5.2,<5.3" },
