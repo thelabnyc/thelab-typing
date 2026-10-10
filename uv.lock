@@ -1335,7 +1335,7 @@ requires-dist = [
     { name = "django", marker = "extra == 'django'", specifier = ">=5.2,<6.1" },
     { name = "django-stubs-ext", marker = "extra == 'django'", specifier = ">=6.0.1" },
     { name = "django-stubs-ext", marker = "extra == 'drf'", specifier = ">=6.0.1" },
-    { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.18.2" },
+    { name = "djangorestframework", marker = "extra == 'drf'", specifier = ">=3.18.3" },
     { name = "pydantic", specifier = ">=2.13.5,<3.0.0" },
 ]
 provides-extras = ["django", "drf"]
@@ -1353,7 +1353,7 @@ dev = [
 ]
 docs = [
     { name = "django", specifier = ">=5.2,<5.3" },
-    { name = "djangorestframework", specifier = ">=3.18.2" },
+    { name = "djangorestframework", specifier = ">=3.18.3" },
     { name = "mkautodoc", specifier = ">=0.2.0,<0.3" },
     { name = "mkdocs", specifier = ">=1.6.1,<2" },
     { name = "mkdocs-awesome-pages-plugin", specifier = ">=2.10.1,<3" },
