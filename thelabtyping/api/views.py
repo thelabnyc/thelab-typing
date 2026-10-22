@@ -26,26 +26,26 @@ from .serializers import Empty
 def _prep_querydict_for_pydantic(queryDict: QueryDict) -> dict[str, str | list[str]]:
     data: dict[str, str | list[str]] = {
         key: (val_list[0] if len(val_list) == 1 else val_list)
-        for key, val_list in ((key, queryDict.getlist(key)) for key in queryDict.keys())
+        for key, val_list in ((key, queryDict.getlist(key)) for key in queryDict)
         if len(val_list) > 0
     }
     return data
 
 
 @as_result(pydantic_core.ValidationError)
-def _parse_request_querystring[_QST: pydantic.BaseModel](
-    model: type[_QST],
+def _parse_request_querystring[QST: pydantic.BaseModel](
+    model: type[QST],
     request: HttpRequest,
-) -> _QST:
+) -> QST:
     data = _prep_querydict_for_pydantic(request.GET)
     return model.model_validate(data)
 
 
 @as_result(pydantic_core.ValidationError)
-def _parse_request_body[_BT: pydantic.BaseModel](
-    model: type[_BT],
+def _parse_request_body[BT: pydantic.BaseModel](
+    model: type[BT],
     request: HttpRequest,
-) -> _BT:
+) -> BT:
     ct = request.headers.get("Content-Type")
     if ct is not None:
         ct = ct.split(";")[0].strip()
@@ -60,14 +60,14 @@ def _parse_request_body[_BT: pydantic.BaseModel](
 def _infer_request_types[
     **P,
     R: HttpResponseBase,
-    _QST: pydantic.BaseModel,
-    _BT: pydantic.BaseModel,
-    _UT: AnyUser,
+    QST: pydantic.BaseModel,
+    BT: pydantic.BaseModel,
+    UT: AnyUser,
 ](
-    fn: Callable[Concatenate[TypedRequest[_QST, _BT, _UT], P], R],
+    fn: Callable[Concatenate[TypedRequest[QST, BT, UT], P], R],
 ) -> tuple[
-    type[_QST],  # Querystring model class
-    type[_BT],  # Body model class
+    type[QST],  # Querystring model class
+    type[BT],  # Body model class
     bool,  # Requires authenticated user?
 ]:
     request_type = get_type_hints(fn).get("request") or EmptyTypedRequest
@@ -78,29 +78,29 @@ def _infer_request_types[
 
     # Auth-required types
     if origin is AuthdEmptyTypedRequest:
-        return cast(type[_QST], Empty), cast(type[_BT], Empty), True
+        return cast(type[QST], Empty), cast(type[BT], Empty), True
 
     if origin is AuthdTypedRequestQuery:
-        return cast(type[_QST], args[0]), cast(type[_BT], Empty), True
+        return cast(type[QST], args[0]), cast(type[BT], Empty), True
 
     if origin is AuthdTypedRequestBody:
-        return cast(type[_QST], Empty), cast(type[_BT], args[0]), True
+        return cast(type[QST], Empty), cast(type[BT], args[0]), True
 
     if origin is AuthdTypedRequest:
-        return cast(type[_QST], args[0]), cast(type[_BT], args[1]), True
+        return cast(type[QST], args[0]), cast(type[BT], args[1]), True
 
     # Auth-not-required types
     if origin is EmptyTypedRequest:
-        return cast(type[_QST], Empty), cast(type[_BT], Empty), False
+        return cast(type[QST], Empty), cast(type[BT], Empty), False
 
     if origin is TypedRequestQuery:
-        return cast(type[_QST], args[0]), cast(type[_BT], Empty), False
+        return cast(type[QST], args[0]), cast(type[BT], Empty), False
 
     if origin is TypedRequestBody:
-        return cast(type[_QST], Empty), cast(type[_BT], args[0]), False
+        return cast(type[QST], Empty), cast(type[BT], args[0]), False
 
     if origin is TypedRequest:
-        return cast(type[_QST], args[0]), cast(type[_BT], args[1]), False
+        return cast(type[QST], args[0]), cast(type[BT], args[1]), False
 
     raise TypeError(f"Failed to infer request types for {fn}")
 
@@ -108,22 +108,22 @@ def _infer_request_types[
 def validate[
     **P,
     R: HttpResponseBase,
-    _QST: pydantic.BaseModel,
-    _BT: pydantic.BaseModel,
-    _UT: AnyUser,
+    QST: pydantic.BaseModel,
+    BT: pydantic.BaseModel,
+    UT: AnyUser,
 ](
-    query_model: type[_QST] | None = None,
-    body_model: type[_BT] | None = None,
+    query_model: type[QST] | None = None,
+    body_model: type[BT] | None = None,
 ) -> Callable[
     [
         Callable[
-            Concatenate[TypedRequest[_QST, _BT, _UT], P],
+            Concatenate[TypedRequest[QST, BT, UT], P],
             R,
         ]
     ],
     Callable[
         Concatenate[HttpRequest, P],
-        R | APIResponse[_QST] | APIResponse[_BT] | HttpResponseForbidden,
+        R | APIResponse[QST] | APIResponse[BT] | HttpResponseForbidden,
     ],
 ]:
     """
@@ -142,10 +142,10 @@ def validate[
     """
 
     def decorator(
-        fn: Callable[Concatenate[TypedRequest[_QST, _BT, _UT], P], R],
+        fn: Callable[Concatenate[TypedRequest[QST, BT, UT], P], R],
     ) -> Callable[
         Concatenate[HttpRequest, P],
-        R | APIResponse[_QST] | APIResponse[_BT] | HttpResponseForbidden,
+        R | APIResponse[QST] | APIResponse[BT] | HttpResponseForbidden,
     ]:
         # Extract validation models from annotations
         inferred_qs, inferred_body, requires_auth = _infer_request_types(fn)
@@ -158,7 +158,7 @@ def validate[
             request: HttpRequest,
             *args: P.args,
             **kwargs: P.kwargs,
-        ) -> R | APIResponse[_QST] | APIResponse[_BT] | HttpResponseForbidden:
+        ) -> R | APIResponse[QST] | APIResponse[BT] | HttpResponseForbidden:
             # Check authentication. This isn't intended as a full replacement
             # for more granular checks, like against specific model permissions.
             # It's meant to work in conjunction with those—the main job of this
@@ -181,7 +181,7 @@ def validate[
                 return APIResponse(body_result)
 
             # Construct the typed request
-            typed_req = TypedRequest[_QST, _BT, _UT](
+            typed_req = TypedRequest[QST, BT, UT](
                 request=request,
                 user=req_user,  # type:ignore[arg-type]
                 qs=qs_result.ok(),

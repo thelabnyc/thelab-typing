@@ -32,12 +32,12 @@ class PaginatedResponse[T](pydantic.BaseModel):
     results: list[T]
 
 
-def paginate_queryset[_ModelT: Model](
+def paginate_queryset[ModelT: Model](
     request: HttpRequest,
-    queryset: QuerySet[_ModelT],
+    queryset: QuerySet[ModelT],
     page: int,
     page_size: int,
-) -> tuple[QuerySet[_ModelT], int, str | None, str | None]:
+) -> tuple[QuerySet[ModelT], int, str | None, str | None]:
     """
     Paginate a queryset and return pagination metadata.
 

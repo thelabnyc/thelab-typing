@@ -11,6 +11,8 @@ import pydantic_core
 from ..abc import ListOf
 from ..result import Result, partition_results
 
+logger = logging.getLogger(__name__)
+
 
 class Empty(pydantic.BaseModel):
     """
@@ -18,10 +20,8 @@ class Empty(pydantic.BaseModel):
     we don't want to actually validate anything.
     """
 
-    pass
 
-
-class APIObj[_DjangoType](pydantic.BaseModel):
+class APIObj[DjangoType](pydantic.BaseModel):
     """Base class for creating API serializers from Django models."""
 
     @classmethod
@@ -46,7 +46,7 @@ class APIObj[_DjangoType](pydantic.BaseModel):
     def from_django(
         cls,
         request: HttpRequest,
-        obj: _DjangoType,
+        obj: DjangoType,
     ) -> Result[Self, pydantic_core.ValidationError]:
         """Convert a Django model instance to this API model."""
         raise NotImplementedError  # pragma: no cover
@@ -55,7 +55,7 @@ class APIObj[_DjangoType](pydantic.BaseModel):
     def list_from_django(
         cls,
         request: HttpRequest,
-        rows: Iterable[_DjangoType],
+        rows: Iterable[DjangoType],
     ) -> tuple[
         ListOf[Self],
         list[pydantic_core.ValidationError],
@@ -63,7 +63,7 @@ class APIObj[_DjangoType](pydantic.BaseModel):
         """Convert a collection of Django models to a typed list, partitioning successes and errors."""
         oks, errs = partition_results(cls.from_django(request, row) for row in rows)
         if len(errs) > 0:
-            logging.info(
+            logger.info(
                 "Dropped %d objects from list due to validation errors: %s",
                 len(errs),
                 errs[0],
@@ -71,18 +71,18 @@ class APIObj[_DjangoType](pydantic.BaseModel):
         APIList = cls.get_list_model()
         return APIList(oks), errs
 
-    def create(self, request: HttpRequest) -> Result[_DjangoType, Exception]:
+    def create(self, request: HttpRequest) -> Result[DjangoType, Exception]:
         """Create a new model instance from this API model."""
         raise NotImplementedError  # pragma: no cover
 
     def update(
-        self, request: HttpRequest, instance: _DjangoType
-    ) -> Result[_DjangoType, Exception]:
+        self, request: HttpRequest, instance: DjangoType
+    ) -> Result[DjangoType, Exception]:
         """Update an existing model instance with data from this API model."""
         raise NotImplementedError  # pragma: no cover
 
     def patch(
-        self, request: HttpRequest, instance: _DjangoType
-    ) -> Result[_DjangoType, Exception]:
+        self, request: HttpRequest, instance: DjangoType
+    ) -> Result[DjangoType, Exception]:
         """Partially update an existing model instance with data from this API model."""
         raise NotImplementedError  # pragma: no cover

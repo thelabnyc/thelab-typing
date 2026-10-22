@@ -24,7 +24,7 @@ type ViewFn = Callable[..., HttpResponseBase]
 DEFAULT_PAGE_SIZE = 100
 
 
-class CRUDViews[_ModelT: Model, _PKT](NamedTuple):
+class CRUDViews[ModelT: Model, PKT](NamedTuple):
     """Container for generated CRUD view functions."""
 
     list_view: ViewFn
@@ -36,47 +36,47 @@ class CRUDViews[_ModelT: Model, _PKT](NamedTuple):
 
 
 def build_crud_resource_views[
-    _ModelT: Model,
-    _PKT,
-    _ListFilters: PaginationParams,
+    ModelT: Model,
+    PKT,
+    ListFiltersT: PaginationParams,
 ](
-    ModelKlass: type[_ModelT],
-    pk_type: type[_PKT],
-    ListFilters: type[_ListFilters],
-    ReadSchema: type[APIObj[_ModelT]],
-    CreateSchema: type[APIObj[_ModelT]] | None = None,
-    UpdateSchema: type[APIObj[_ModelT]] | None = None,
-    PatchSchema: type[APIObj[_ModelT]] | None = None,
+    ModelKlass: type[ModelT],
+    pk_type: type[PKT],
+    ListFilters: type[ListFiltersT],
+    ReadSchema: type[APIObj[ModelT]],
+    CreateSchema: type[APIObj[ModelT]] | None = None,
+    UpdateSchema: type[APIObj[ModelT]] | None = None,
+    PatchSchema: type[APIObj[ModelT]] | None = None,
     default_page_size: int = DEFAULT_PAGE_SIZE,
     get_queryset: Callable[
         [
-            TypedRequestQuery[_ListFilters]
+            TypedRequestQuery[ListFiltersT]
             | EmptyTypedRequest
-            | TypedRequestBody[APIObj[_ModelT]]
+            | TypedRequestBody[APIObj[ModelT]]
         ],
-        QuerySet[_ModelT],
+        QuerySet[ModelT],
     ]
     | None = None,
     filter_queryset: Callable[
-        [TypedRequestQuery[_ListFilters], QuerySet[_ModelT]],
-        QuerySet[_ModelT],
+        [TypedRequestQuery[ListFiltersT], QuerySet[ModelT]],
+        QuerySet[ModelT],
     ]
     | None = None,
     sort_queryset: Callable[
-        [TypedRequestQuery[_ListFilters], QuerySet[_ModelT]],
-        QuerySet[_ModelT],
+        [TypedRequestQuery[ListFiltersT], QuerySet[ModelT]],
+        QuerySet[ModelT],
     ]
     | None = None,
     get_object: Callable[
         [
-            EmptyTypedRequest | TypedRequestBody[APIObj[_ModelT]],
-            QuerySet[_ModelT],
-            _PKT,
+            EmptyTypedRequest | TypedRequestBody[APIObj[ModelT]],
+            QuerySet[ModelT],
+            PKT,
         ],
-        _ModelT,
+        ModelT,
     ]
     | None = None,
-) -> CRUDViews[_ModelT, _PKT]:
+) -> CRUDViews[ModelT, PKT]:
     """
     Build type-safe CRUD views for a Django model.
 
@@ -111,25 +111,25 @@ def build_crud_resource_views[
     # respect any custom default managers defined on the model (e.g., managers
     # that filter soft-deleted records or scope to the current tenant).
     def default_get_queryset(
-        request: TypedRequestQuery[_ListFilters]
+        request: TypedRequestQuery[ListFiltersT]
         | EmptyTypedRequest
-        | TypedRequestBody[APIObj[_ModelT]],
-    ) -> QuerySet[_ModelT]:
+        | TypedRequestBody[APIObj[ModelT]],
+    ) -> QuerySet[ModelT]:
         return ModelKlass._default_manager.all()
 
     # Default sort function. Orders by pk for consistent pagination.
     def default_sort_queryset(
-        request: TypedRequestQuery[_ListFilters],
-        queryset: QuerySet[_ModelT],
-    ) -> QuerySet[_ModelT]:
+        request: TypedRequestQuery[ListFiltersT],
+        queryset: QuerySet[ModelT],
+    ) -> QuerySet[ModelT]:
         return queryset.order_by("pk")
 
     # Default object lookup function. Uses pk field for lookups.
     def default_get_object(
-        request: EmptyTypedRequest | TypedRequestBody[APIObj[_ModelT]],
-        queryset: QuerySet[_ModelT],
-        pk: _PKT,
-    ) -> _ModelT:
+        request: EmptyTypedRequest | TypedRequestBody[APIObj[ModelT]],
+        queryset: QuerySet[ModelT],
+        pk: PKT,
+    ) -> ModelT:
         return get_object_or_404(queryset, pk=pk)
 
     _get_queryset = get_queryset or default_get_queryset
@@ -141,7 +141,7 @@ def build_crud_resource_views[
     # -------------------------------------------------------------------------
     @validate(query_model=ListFilters)
     def list_view(
-        request: TypedRequestQuery[_ListFilters],
+        request: TypedRequestQuery[ListFiltersT],
     ) -> HttpResponse:
         """List all objects with pagination."""
         params = request.validated_querystring
@@ -180,7 +180,7 @@ def build_crud_resource_views[
     @validate()
     def detail_view(
         request: EmptyTypedRequest,
-        pk: _PKT,
+        pk: PKT,
     ) -> HttpResponse:
         """Get a single object by lookup value."""
         qs = _get_queryset(request)
@@ -196,7 +196,7 @@ def build_crud_resource_views[
 
         @validate(body_model=CreateSchema)
         def _create_view(
-            request: TypedRequestBody[APIObj[_ModelT]],
+            request: TypedRequestBody[APIObj[ModelT]],
         ) -> HttpResponse:
             """Create a new object."""
             create_result = request.validated_body.create(request)
@@ -220,8 +220,8 @@ def build_crud_resource_views[
 
         @validate(body_model=UpdateSchema)
         def _update_view(
-            request: TypedRequestBody[APIObj[_ModelT]],
-            pk: _PKT,
+            request: TypedRequestBody[APIObj[ModelT]],
+            pk: PKT,
         ) -> HttpResponse:
             """Update an existing object (full replacement)."""
             qs = _get_queryset(request)
@@ -245,8 +245,8 @@ def build_crud_resource_views[
 
         @validate(body_model=PatchSchema)
         def _patch_view(
-            request: TypedRequestBody[APIObj[_ModelT]],
-            pk: _PKT,
+            request: TypedRequestBody[APIObj[ModelT]],
+            pk: PKT,
         ) -> HttpResponse:
             """Partially update an existing object."""
             qs = _get_queryset(request)
@@ -268,7 +268,7 @@ def build_crud_resource_views[
     @validate()
     def delete_view(
         request: EmptyTypedRequest,
-        pk: _PKT,
+        pk: PKT,
     ) -> HttpResponse:
         """Delete an object."""
         qs = _get_queryset(request)

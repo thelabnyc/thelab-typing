@@ -52,7 +52,7 @@ class APIResponseTest(TestCase):
         )
 
     def test_accept_result_containing_errors(self) -> None:
-        user, maybeobj = self._get_api_user(valid=False)
+        _user, maybeobj = self._get_api_user(valid=False)
         response = APIResponse(maybeobj)
         self.assertEqual(response.status_code, Status.HTTP_400_BAD_REQUEST)
         self.assertJSONEqual(

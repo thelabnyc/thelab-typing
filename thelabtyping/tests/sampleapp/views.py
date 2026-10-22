@@ -41,7 +41,7 @@ class UserView(View):
         assert isinstance(request.validated_querystring, UserSearchQuery)
         assert isinstance(request.validated_body, Empty)
         # Use the UserSearchQuery model to get he queryset of users to return
-        users, errs = APIUser.list_from_django(
+        users, _errs = APIUser.list_from_django(
             request,
             request.validated_querystring.get_queryset(),
         )
@@ -83,7 +83,7 @@ def router_users_list(
     request: TypedRequestQuery[UserSearchQuery],
 ) -> APIResponse[ListOf[APIUser]]:
     # Use the UserSearchQuery model to get he queryset of users to return
-    users, errs = APIUser.list_from_django(
+    users, _errs = APIUser.list_from_django(
         request,
         request.validated_querystring.get_queryset(),
     )

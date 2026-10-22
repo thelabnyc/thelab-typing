@@ -131,17 +131,13 @@ def _extract_response_model(
 
     # Handle generic types like ListOf[T] which are subscripted generics
     response_origin = get_origin(response_type)
-    if response_origin is not None:
-        # It's a generic like ListOf[T] - return the subscripted generic itself
-        # This preserves type info for schema generation
-        if hasattr(response_type, "__mro__") or hasattr(response_origin, "__mro__"):
-            # Check if it's Empty
-            inner_args = get_args(response_type)
-            if inner_args and inner_args[0] is Empty:
-                return None
-            # Return the generic origin class (e.g., ListOf)
-            # The actual type info will be handled by Pydantic's model_json_schema
-            return response_type  # type: ignore[no-any-return]
+    if response_origin is not None and (
+        hasattr(response_type, "__mro__") or hasattr(response_origin, "__mro__")
+    ):
+        inner_args = get_args(response_type)
+        if inner_args and inner_args[0] is Empty:
+            return None
+        return response_type  # type: ignore[no-any-return]
 
     # Check if it's a concrete Pydantic model
     if isinstance(response_type, type) and issubclass(

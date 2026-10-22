@@ -11,6 +11,7 @@ Standard DRF requires manual conversion between Pydantic models and JSON:
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+
 class UserView(APIView):
     def get(self, request):
         user_data = UserResponse(id=1, name="Alice", email="alice@example.com")
@@ -64,19 +65,18 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 import pydantic
 
+
 class UserResponse(pydantic.BaseModel):
     id: int
     name: str
     email: str
     is_active: bool
 
+
 class UserView(APIView):
     def get(self, request):
         user_data = UserResponse(
-            id=1,
-            name="Alice",
-            email="alice@example.com",
-            is_active=True
+            id=1, name="Alice", email="alice@example.com", is_active=True
         )
         # Automatic Pydantic serialization with proper JSON formatting
         return Response(user_data)
@@ -106,16 +106,19 @@ from django.http import HttpResponse
 from thelabtyping.api import validate, TypedRequestQuery, APIResponse
 import pydantic
 
+
 class SearchQuery(pydantic.BaseModel):
     q: str
     limit: int = 10
     category: str | None = None
+
 
 class SearchResult(pydantic.BaseModel):
     query: str
     results: list[str]
     total: int
     category: str | None
+
 
 @api_view(["GET"])
 @validate()
@@ -127,7 +130,7 @@ def search_api(request: TypedRequestQuery[SearchQuery]) -> HttpResponse:
         query=query_params.q,
         results=["result1", "result2"],
         total=2,
-        category=query_params.category
+        category=query_params.category,
     )
 
     # APIResponse + enhanced DRF renderer = automatic serialization
@@ -163,16 +166,19 @@ from rest_framework.response import Response
 from thelabtyping.api import validate, TypedRequestBody
 from thelabtyping.result import Result, as_result
 
+
 class CreateUser(pydantic.BaseModel):
     name: str
     email: str
     age: int
+
 
 class UserResponse(pydantic.BaseModel):
     id: int
     name: str
     email: str
     created_at: str
+
 
 class UserCreateView(APIView):
     @validate()
@@ -195,7 +201,7 @@ class UserCreateView(APIView):
             id=123,
             name=user_data.name,
             email=user_data.email,
-            created_at="2024-01-01T00:00:00Z"
+            created_at="2024-01-01T00:00:00Z",
         )
 ```
 
@@ -209,10 +215,12 @@ from rest_framework import serializers
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
+
 class UserSerializer(serializers.Serializer):
     id = serializers.IntegerField()
     name = serializers.CharField()
     email = serializers.EmailField()
+
 
 class UserView(APIView):
     def get(self, request):
@@ -230,10 +238,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 import pydantic
 
+
 class UserResponse(pydantic.BaseModel):
     id: int
     name: str
     email: str
+
 
 class UserView(APIView):
     def get(self, request):
@@ -255,11 +265,13 @@ class UserResponse(pydantic.BaseModel):
     name: str
     email: str
 
+
 # Django view
 @validate()
 def django_user_view(request: EmptyTypedRequest) -> HttpResponse:
     user = UserResponse(id=1, name="Alice", email="alice@example.com")
     return APIResponse(user)
+
 
 # DRF view
 class DRFUserView(APIView):
@@ -276,16 +288,14 @@ Both Django and DRF views benefit from the same error handling patterns:
 from thelabtyping.result import Result, Err
 from thelabtyping.api import Status
 
+
 class DRFUserView(APIView):
     def get(self, request):
         user_result = self.fetch_user()
 
         if user_result.is_err:
             error = user_result.unwrap_err()
-            return Response(
-                {"error": str(error)},
-                status=Status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": str(error)}, status=Status.HTTP_404_NOT_FOUND)
 
         return Response(user_result.unwrap())
 ```

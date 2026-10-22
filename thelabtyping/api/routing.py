@@ -252,7 +252,7 @@ class Router:
         """Auto-generated index view listing all available routes."""
         index = RouterIndex({})
         namespace = request.resolver_match.namespace if request.resolver_match else None
-        for pattern, route in self.routes.items():
+        for route in self.routes.values():
             name = f"{namespace}:{route.name}" if namespace else route.name
             try:
                 url_path = reverse(name)
@@ -299,14 +299,14 @@ class Router:
         self.routes[_pattern] = route
         return self.routes[_pattern]
 
-    def register_resource[_ModelT: Model, _PKT](
+    def register_resource[ModelT: Model, PKT](
         self,
         *,
         basename: str,
         list_pattern: str,
         detail_pattern: str,
-        views: CRUDViews[_ModelT, _PKT],
-        model: type[_ModelT] | None = None,
+        views: CRUDViews[ModelT, PKT],
+        model: type[ModelT] | None = None,
         list_permissions: Sequence[str] | None = None,
         detail_permissions: Sequence[str] | None = None,
         create_permissions: Sequence[str] | None = None,

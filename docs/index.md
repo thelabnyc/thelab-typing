@@ -9,9 +9,9 @@ Django's flexibility comes at a cost—runtime errors from invalid data, brittle
 ```py
 # Traditional Django - runtime disasters waiting to happen
 def create_user(request):
-    name = request.POST.get("name")        # Could be None
-    age = int(request.POST.get("age"))     # Could raise ValueError
-    email = request.POST.get("email")      # No validation whatsoever
+    name = request.POST.get("name")  # Could be None
+    age = int(request.POST.get("age"))  # Could raise ValueError
+    email = request.POST.get("email")  # No validation whatsoever
     # Ship it and hope for the best 🤞
 ```
 
@@ -25,6 +25,7 @@ class CreateUser(pydantic.BaseModel):
     name: str
     age: int
     email: str
+
 
 @validate()
 def create_user(request: TypedRequestBody[CreateUser]) -> HttpResponse:
@@ -80,11 +81,13 @@ pip install thelab-typing[django,drf]
 ```py
 from thelabtyping.result import Result, Ok, Err, as_result
 
+
 @as_result(ValueError, TypeError)
 def parse_data(data: str) -> dict:
     if not data:
         raise ValueError("Empty data")
     return {"parsed": data}
+
 
 result = parse_data("hello")
 if result.is_ok:
@@ -98,8 +101,10 @@ from django.http import HttpResponse
 from thelabtyping.api import validate, TypedRequestQuery
 import pydantic
 
+
 class QueryModel(pydantic.BaseModel):
     search: str
+
 
 @validate()
 def my_view(request: TypedRequestQuery[QueryModel]) -> HttpResponse:

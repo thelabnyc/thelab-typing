@@ -57,9 +57,7 @@ class OpenAPITestMixin:
         """Generate OpenAPI spec after registering router in URL config."""
 
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, namespace))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, namespace))),)
 
         with override_settings(ROOT_URLCONF=TestURLConf):
             return generate_openapi(
@@ -80,9 +78,7 @@ class OpenAPITestMixin:
         """Generate OpenAPI spec with custom config after registering router."""
 
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, namespace))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, namespace))),)
 
         with override_settings(ROOT_URLCONF=TestURLConf):
             generator = OpenAPIGenerator(config)
@@ -98,9 +94,7 @@ class OpenAPITestMixin:
         """Generate OpenAPI spec and validate against JSON schema."""
 
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, namespace))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, namespace))),)
 
         with override_settings(ROOT_URLCONF=TestURLConf):
             spec = generate_openapi(

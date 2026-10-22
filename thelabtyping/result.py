@@ -13,13 +13,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable, Iterator
 from functools import wraps
-from typing import Any, Literal, NoReturn, Self
+from typing import Literal, NoReturn, Self
 
 
 class UnwrapError(TypeError):
     """Raised when attempting to unwrap a Result in the wrong state."""
-
-    pass
 
 
 class DoException[E](Exception):
@@ -35,11 +33,11 @@ class DoException[E](Exception):
         self.err = err
 
 
-class _Result[_OK, _Err](ABC):
+class _Result[OkT, ErrT](ABC):
     """Abstract base class for Result types."""
 
-    ok_value: _OK
-    err_value: _Err
+    ok_value: OkT
+    err_value: ErrT
 
     @property
     @abstractmethod
@@ -50,39 +48,39 @@ class _Result[_OK, _Err](ABC):
     def is_err(self) -> bool: ...  # pragma: no cover
 
     @abstractmethod
-    def ok(self) -> _OK | None: ...  # pragma: no cover
+    def ok(self) -> OkT | None: ...  # pragma: no cover
 
     @abstractmethod
-    def err(self) -> _Err | None: ...  # pragma: no cover
+    def err(self) -> ErrT | None: ...  # pragma: no cover
 
-    def unwrap(self) -> _OK:
+    def unwrap(self) -> OkT:
         if self.is_ok:
             return self.ok_value
         raise UnwrapError("Called Either.unwrap() on an Err value")
 
-    def unwrap_err(self) -> _Err:
+    def unwrap_err(self) -> ErrT:
         if self.is_err:
             return self.err_value
         raise UnwrapError("Called Either.unwrap_err() on an Ok value")
 
 
-class Ok[_OK](_Result[_OK, None]):
+class Ok[OkT](_Result[OkT, None]):
     """Represents a successful result containing a value."""
 
-    def __init__(self, value: _OK) -> None:
+    def __init__(self, value: OkT) -> None:
         self.ok_value = value
         self.err_value = None
 
-    def __iter__(self) -> Iterator[_OK]:
+    def __iter__(self) -> Iterator[OkT]:
         yield self.ok_value
 
     def __repr__(self) -> str:
-        return f"Ok({repr(self.ok_value)})"
+        return f"Ok({self.ok_value!r})"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, Ok) and self.ok_value == other.ok_value
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not (self == other)
 
     def __hash__(self) -> int:
@@ -96,20 +94,20 @@ class Ok[_OK](_Result[_OK, None]):
     def is_err(self) -> Literal[False]:
         return False
 
-    def ok(self) -> _OK:
+    def ok(self) -> OkT:
         return self.ok_value
 
     def err(self) -> None:
         return None
 
-    def and_then[L, R](self, op: Callable[[_OK], Result[L, R]]) -> Result[L, R]:
+    def and_then[L, R](self, op: Callable[[OkT], Result[L, R]]) -> Result[L, R]:
         return op(self.ok_value)
 
 
-class Err[_Err](_Result[None, _Err]):
+class Err[ErrT](_Result[None, ErrT]):
     """Represents a failed result containing an error."""
 
-    def __init__(self, value: _Err) -> None:
+    def __init__(self, value: ErrT) -> None:
         self.ok_value = None
         self.err_value = value
 
@@ -125,12 +123,12 @@ class Err[_Err](_Result[None, _Err]):
         return _iter()
 
     def __repr__(self) -> str:
-        return f"Err({repr(self.err_value)})"
+        return f"Err({self.err_value!r})"
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, Err) and self.err_value == other.err_value
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not (self == other)
 
     def __hash__(self) -> int:
@@ -147,14 +145,14 @@ class Err[_Err](_Result[None, _Err]):
     def ok(self) -> None:
         return None
 
-    def err(self) -> _Err:
+    def err(self) -> ErrT:
         return self.err_value
 
     def and_then(self, op: object) -> Self:
         return self
 
 
-type Result[_OK, _Err] = Ok[_OK] | Err[_Err]
+type Result[OkT, ErrT] = Ok[OkT] | Err[ErrT]
 
 
 def as_result[**P, R, E: Exception](
