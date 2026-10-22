@@ -12,6 +12,7 @@ type Status = Literal["pending", "complete", "failed"]
 
 is_status = is_literal_factory(Status)
 
+
 def process_status(value: str) -> None:
     if is_status(value):
         # value is now typed as Status
@@ -32,27 +33,26 @@ Use `ListOf` and `DictOf` for type-safe Pydantic containers:
 from thelabtyping.abc import ListOf, DictOf
 import pydantic
 
+
 class User(pydantic.BaseModel):
     name: str
     age: int
 
+
 class UserList(ListOf[User]):
     pass
+
 
 class UserMap(DictOf[str, User]):
     pass
 
+
 # Type-safe operations
-users = UserList([
-    {"name": "Alice", "age": 30},
-    {"name": "Bob", "age": 25}
-])
+users = UserList([{"name": "Alice", "age": 30}, {"name": "Bob", "age": 25}])
 
 for user in users:  # user is typed as User
     print(user.name)
 
-user_map = UserMap({
-    "alice": {"name": "Alice", "age": 30}
-})
+user_map = UserMap({"alice": {"name": "Alice", "age": 30}})
 alice = user_map["alice"]  # alice is typed as User
 ```

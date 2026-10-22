@@ -48,10 +48,12 @@ class ListOf[T](pydantic.RootModel[list[T]]):
 
 ```python
 # Full type annotations required
-def validate[**P, R: HttpResponse, _QST: pydantic.BaseModel](
-) -> Callable[[Callable[P, R]], Callable[P, R | APIResponse]]:
+def validate[**P, R: HttpResponse, QST: pydantic.BaseModel]() -> Callable[
+    [Callable[P, R]], Callable[P, R | APIResponse]
+]:
     """Complex generics are preferred over Any"""
     pass
+
 
 # Use Result types for error handling
 @as_result(ValueError, TypeError)
@@ -90,10 +92,9 @@ from .serializers import Empty
 def validate[**P, R: HttpResponse]() -> Callable[...]:
     """Decorator that infers types from function signatures"""
 
+
 def view_function(
-    request: TypedRequest[QueryModel, BodyModel, User],
-    *args,
-    **kwargs
+    request: TypedRequest[QueryModel, BodyModel, User], *args, **kwargs
 ) -> HttpResponse:
     """Request type determines validation automatically"""
 ```
@@ -104,6 +105,7 @@ def view_function(
 # Extend Pydantic with typed collections
 class ListOf[T](pydantic.RootModel[list[T]]):
     """Type-safe list wrapper with full sequence protocol"""
+
 
 class DictOf[K, V](pydantic.RootModel[dict[K, V]]):
     """Type-safe dict wrapper with full mapping protocol"""
@@ -214,12 +216,14 @@ def parse_data(raw: str) -> ProcessedData:
         raise ValueError("Empty input")
     return process(raw)
 
+
 # Use Result types
 @as_result(ValueError, TypeError)
 def parse_data(raw: str) -> ProcessedData:
     if not raw:
         raise ValueError("Empty input")
     return process(raw)
+
 
 # Handle with monadic patterns
 result = parse_data(input_data)

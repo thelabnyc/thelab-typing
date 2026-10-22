@@ -11,9 +11,9 @@ type AnyUser = User | AnonymousUser
 
 
 class TypedRequest[
-    _QST: pydantic.BaseModel,  # QueryString Type
-    _BT: pydantic.BaseModel,  # Body Type
-    _UT: AnyUser = AnyUser,  # User Type
+    QST: pydantic.BaseModel,  # QueryString Type
+    BT: pydantic.BaseModel,  # Body Type
+    UT: AnyUser = AnyUser,  # User Type
 ](HttpRequest):
     """
     Wrapper around the stock HttpRequest class. Provides typed-checked,
@@ -21,12 +21,12 @@ class TypedRequest[
     or both. Can also assert (and type) that the user is authenticated.
     """
 
-    user: _UT
+    user: UT
 
-    __validated_querystring: _QST
-    __validated_body: _BT
+    __validated_querystring: QST
+    __validated_body: BT
 
-    def __init__(self, request: HttpRequest, user: _UT, qs: _QST, body: _BT) -> None:
+    def __init__(self, request: HttpRequest, user: UT, qs: QST, body: BT) -> None:
         # Clone the original request into self
         self.__dict__.update(request.__dict__)
         # Add the validate request data objects
@@ -35,7 +35,7 @@ class TypedRequest[
         self.__validated_body = body
 
     @property
-    def validated_querystring(self) -> _QST:
+    def validated_querystring(self) -> QST:
         """
         Return the fully-validated querystring data. This is a property merely
         to avoid accidental mutation.
@@ -43,7 +43,7 @@ class TypedRequest[
         return self.__validated_querystring
 
     @property
-    def validated_body(self) -> _BT:
+    def validated_body(self) -> BT:
         """
         Return the fully-validated body (POST/PUT/etc) data. This is a property
         merely to avoid accidental mutation.

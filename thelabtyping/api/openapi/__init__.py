@@ -27,13 +27,12 @@ class OpenAPISchema:
     def __call__(self, router: "Router", request: HttpRequest) -> HttpResponse:
         """Handle schema request - implements SchemaGenerator protocol."""
         # Check authentication first
-        if self.require_auth:
-            if (
-                not hasattr(request, "user")
-                or not request.user
-                or request.user.is_anonymous
-            ):
-                return HttpResponseForbidden()
+        if self.require_auth and (
+            not hasattr(request, "user")
+            or not request.user
+            or request.user.is_anonymous
+        ):
+            return HttpResponseForbidden()
 
         # Auto-populate servers from request if not provided
         servers = self.servers

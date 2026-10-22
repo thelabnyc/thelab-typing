@@ -396,7 +396,7 @@ class TestOpenAPIPathResolutionWithNamespace(TestCase):
         spec = generator.generate(router, namespace="sampleapp")
 
         # Find paths with parameters
-        param_paths = [p for p in spec.paths.keys() if "{" in p]
+        param_paths = [p for p in spec.paths if "{" in p]
         self.assertTrue(len(param_paths) > 0)
 
         # All parameter placeholders should use OpenAPI syntax

@@ -1,10 +1,6 @@
 from collections.abc import Callable
-from typing import _LiteralGenericAlias  # type:ignore[attr-defined]
-from typing import (
-    TypeAliasType,
-    TypeIs,
-    get_args,
-)
+from typing import TypeAliasType, TypeIs, get_args
+import typing
 
 
 def is_literal_factory[T](lit: T) -> Callable[[object], TypeIs[T]]:
@@ -30,7 +26,7 @@ def is_literal_factory[T](lit: T) -> Callable[[object], TypeIs[T]]:
         resolved_lit: object = lit
         if isinstance(resolved_lit, TypeAliasType):
             resolved_lit = resolved_lit.__value__
-        assert isinstance(resolved_lit, _LiteralGenericAlias)
+        assert isinstance(resolved_lit, typing._LiteralGenericAlias)  # type: ignore[attr-defined]
         return arg in get_args(resolved_lit)
 
     return is_literal

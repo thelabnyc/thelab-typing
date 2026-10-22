@@ -342,7 +342,7 @@ class TestAutoOpenAPI(TestCase):
         router.route("users/", name="users")
 
         # Should not have openapi.json route
-        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        route_patterns = [str(pattern) for pattern in router.routes]
         self.assertNotIn("openapi.json", route_patterns)
 
     def test_openapi_endpoint_registered(self) -> None:
@@ -359,7 +359,7 @@ class TestAutoOpenAPI(TestCase):
         router.route("users/", name="users")
 
         # Should have openapi.json route
-        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        route_patterns = [str(pattern) for pattern in router.routes]
         self.assertIn("openapi.json", route_patterns)
 
     def test_openapi_custom_url_pattern(self) -> None:
@@ -375,7 +375,7 @@ class TestAutoOpenAPI(TestCase):
         )
 
         # Should have custom route
-        route_patterns = [str(pattern) for pattern in router.routes.keys()]
+        route_patterns = [str(pattern) for pattern in router.routes]
         self.assertIn("docs/openapi.json", route_patterns)
         self.assertNotIn("openapi.json", route_patterns)
 
@@ -410,9 +410,7 @@ class TestAutoOpenAPI(TestCase):
 
         # Set up URL config for reverse() to work
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, "test"))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, "test"))),)
 
         # Call the view with URL config in place
         with override_settings(ROOT_URLCONF=TestURLConf):
@@ -489,9 +487,7 @@ class TestAutoOpenAPI(TestCase):
 
         # Set up URL config for reverse() to work
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, "test"))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, "test"))),)
 
         # Call the view - should return 200
         with override_settings(ROOT_URLCONF=TestURLConf):
@@ -534,9 +530,7 @@ class TestAutoOpenAPI(TestCase):
 
         # Set up URL config for reverse() to work
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, "test"))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, "test"))),)
 
         # Call the view - should return 200 even for anonymous user
         with override_settings(ROOT_URLCONF=TestURLConf):
@@ -607,9 +601,7 @@ class TestAutoOpenAPI(TestCase):
 
         # Set up URL config for reverse() to work
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, "test"))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, "test"))),)
 
         with override_settings(ROOT_URLCONF=TestURLConf):
             response = openapi_route.view(request)
@@ -654,9 +646,7 @@ class TestAutoOpenAPI(TestCase):
 
         # Set up URL config for reverse() to work
         class TestURLConf:
-            urlpatterns = [
-                path("test/", include((router.urls, "test"))),
-            ]
+            urlpatterns = (path("test/", include((router.urls, "test"))),)
 
         with override_settings(ROOT_URLCONF=TestURLConf):
             response = openapi_route.view(request)

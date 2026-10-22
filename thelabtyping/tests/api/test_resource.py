@@ -145,9 +145,7 @@ test_router.register_resource(
 class TestURLConf:
     """URL configuration for tests."""
 
-    urlpatterns = [
-        path("api/", include((test_router.urls, "test"))),
-    ]
+    urlpatterns = (path("api/", include((test_router.urls, "test"))),)
 
 
 # =============================================================================
@@ -715,9 +713,7 @@ perm_router.register_resource(
 class PermTestURLConf:
     """URL configuration for permission tests."""
 
-    urlpatterns = [
-        path("api/", include((perm_router.urls, "perm_test"))),
-    ]
+    urlpatterns = (path("api/", include((perm_router.urls, "perm_test"))),)
 
 
 @override_settings(ROOT_URLCONF=PermTestURLConf)
@@ -823,9 +819,7 @@ custom_qs_router.register_resource(
 class CustomQSTestURLConf:
     """URL configuration for custom queryset tests."""
 
-    urlpatterns = [
-        path("api/", include((custom_qs_router.urls, "custom_qs_test"))),
-    ]
+    urlpatterns = (path("api/", include((custom_qs_router.urls, "custom_qs_test"))),)
 
 
 @override_settings(ROOT_URLCONF=CustomQSTestURLConf)
@@ -934,9 +928,7 @@ error_router.register_resource(
 class ErrorTestURLConf:
     """URL configuration for error path tests."""
 
-    urlpatterns = [
-        path("api/", include((error_router.urls, "error_test"))),
-    ]
+    urlpatterns = (path("api/", include((error_router.urls, "error_test"))),)
 
 
 @override_settings(ROOT_URLCONF=ErrorTestURLConf)
@@ -1064,9 +1056,7 @@ get_object_router.register_resource(
 class GetObjectTestURLConf:
     """URL configuration for get_object tests."""
 
-    urlpatterns = [
-        path("api/", include((get_object_router.urls, "get_object_test"))),
-    ]
+    urlpatterns = (path("api/", include((get_object_router.urls, "get_object_test"))),)
 
 
 @override_settings(ROOT_URLCONF=GetObjectTestURLConf)
