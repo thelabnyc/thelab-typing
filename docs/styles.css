@@ -1,1 +1,6 @@
 .autodoc { display: none; }
+
+:root {
+    --md-text-font: "Roboto Variable";
+    --md-code-font: "Roboto Mono Variable";
+}

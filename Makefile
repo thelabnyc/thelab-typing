@@ -1,8 +1,18 @@
-docs_serve:
-	uv run --group docs mkdocs serve --strict
+docs_serve: docs_vendor
+	uv run --group docs zensical serve
 
-docs_build:
-	uv run --group docs mkdocs build --strict
+docs_build: docs_vendor
+	uv run --group docs zensical build --strict
+	uv run python bin/check-docs-csp.py build/mkdocs \
+		--unused https://unpkg.com/ace-builds@ \
+		--unused https://unpkg.com/pyodide@ \
+		--unused https://cdn.jsdelivr.net/pyodide/ \
+		--unused https://unpkg.com/resize-observer-polyfill \
+		--unused https://unpkg.com/glightbox@ \
+		--unused https://unpkg.com/mermaid@
+
+docs_vendor:
+	uv run python bin/vendor-docs-assets.py
 
 docs: docs_build
 	rm -rf public/ && \
