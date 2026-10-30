@@ -1016,7 +1016,7 @@ dev = [
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = "==2.4.0" },
     { name = "ruff", specifier = ">=0.17.3" },
-    { name = "tox", specifier = ">=4.67.1" },
+    { name = "tox", specifier = ">=4.67.2" },
     { name = "types-jsonschema", specifier = ">=4.26.0.20261006" },
 ]
 docs = [
