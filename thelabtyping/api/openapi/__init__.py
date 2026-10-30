@@ -24,7 +24,7 @@ class OpenAPISchema:
     cache_timeout: int | None = 3600
     require_auth: bool = True
 
-    def __call__(self, router: "Router", request: HttpRequest) -> HttpResponse:
+    def __call__(self, router: Router, request: HttpRequest) -> HttpResponse:
         """Handle schema request - implements SchemaGenerator protocol."""
         # Check authentication first
         if self.require_auth and (
@@ -66,7 +66,7 @@ class OpenAPISchema:
 
     def _get_cache_key(
         self,
-        router: "Router",
+        router: Router,
         servers: list[Server],
         namespace: str | None,
     ) -> str:

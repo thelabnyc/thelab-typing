@@ -41,7 +41,7 @@ def create_user(request: TypedRequestBody[CreateUser]) -> HttpResponse:
 
 **Zero Boilerplate**: Automatic request validation, response serialization, and error formatting. Write business logic, not plumbing code.
 
-**Modern Python**: Built for Python 3.13+ with cutting-edge type system features like generic type parameters and `TypeIs`.
+**Modern Python**: Built for Python 3.14+ with cutting-edge type system features like generic type parameters and `TypeIs`.
 
 ## What You Get
 
