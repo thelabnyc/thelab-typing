@@ -15,7 +15,7 @@ This guide defines the coding standards, practices, and philosophies used by the
 
 ### Modern Python Only
 
-- Target Python 3.13+ exclusively
+- Target Python 3.14+ exclusively
 - Use modern generic syntax (`[T]` instead of `TypeVar`)
 - Adopt new language features immediately when available
 - No backward compatibility concerns with older Python versions
