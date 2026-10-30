@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from typing import Annotated
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 

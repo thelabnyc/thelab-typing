@@ -8,8 +8,6 @@ Provides an Either / Result type, as well as a decorator to convert normal
 exception-throwing functions into functions which return a Result type.
 """
 
-from __future__ import annotations
-
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Generator, Iterable, Iterator
 from functools import wraps

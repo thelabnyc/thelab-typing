@@ -1,7 +1,5 @@
 """Tests for build_crud_resource_views - type-safe CRUD view generation."""
 
-from __future__ import annotations
-
 from typing import Self
 import json
 
