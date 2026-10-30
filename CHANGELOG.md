@@ -1,5 +1,35 @@
 # Changes
 
+## v1.1.0 (2026-10-30)
+
+### Feat
+
+- support Django 6.1
+- support Python 3.15 and drop Python 3.13
+
+### Fix
+
+- **deps**: update dependency pydantic to >=2.14.1,<3.0.0
+- **deps**: update dependency pydantic to >=2.14.0,<3.0.0
+- **deps**: update dependency djangorestframework to >=3.18.3
+- **deps**: update dependency djangorestframework to >=3.18.2
+- **deps**: pin tox lock to 4.64.7 (min release age)
+- **deps**: update dependency djangorestframework to >=3.18.1
+- **guards**: resolve TypeAliasType with isinstance for mypy 2
+- **deps**: update dependency pydantic to >=2.13.5,<3.0.0
+- **deps**: update dependency djangorestframework to >=3.18.0
+- **deps**: update dependency djangorestframework to >=3.17.2
+- **deps**: update dependency pydantic to >=2.13.4,<3.0.0
+- **deps**: update dependency pydantic to >=2.13.3,<3.0.0
+- **deps**: update dependency pydantic to >=2.13.2,<3.0.0
+- **deps**: update dependency pydantic to >=2.13.1,<3.0.0
+- **deps**: update dependency pydantic to >=2.13.0,<3.0.0
+- **deps**: update dependency django-stubs-ext to >=6.0.1
+
+### Refactor
+
+- adopt Python 3.14 syntax
+
 ## v1.0.2 (2026-03-31)
 
 ### Fix
