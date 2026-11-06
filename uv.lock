@@ -911,7 +911,7 @@ provides-extras = ["django", "drf"]
 dev = [
     { name = "coverage", specifier = ">=7.17.0" },
     { name = "django-stubs", specifier = ">=6.0.1" },
-    { name = "djangorestframework-stubs", specifier = ">=3.18.1" },
+    { name = "djangorestframework-stubs", specifier = ">=3.18.2" },
     { name = "jsonschema", specifier = ">=4.26.0" },
     { name = "mypy", specifier = "==2.4.1" },
     { name = "ruff", specifier = ">=0.17.3" },
