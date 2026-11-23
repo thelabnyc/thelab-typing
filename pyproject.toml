@@ -43,7 +43,7 @@ dev = [
     "types-jsonschema (>=4.26.0.20261006)",
 ]
 docs = [
-    "pymdown-extensions (>=13.1,<14)",
+    "pymdown-extensions (>=13.1.1,<14)",
     "mkautodoc (>=0.2.0,<0.3)",
     "zensical (>=0.1.2,<0.1.3)",
     "django (>=5.2,<5.3)",
