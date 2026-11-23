@@ -913,7 +913,7 @@ docs = [
     { name = "django", specifier = ">=5.2,<5.3" },
     { name = "djangorestframework", specifier = ">=3.18.3" },
     { name = "mkautodoc", specifier = ">=0.2.0,<0.3" },
-    { name = "pymdown-extensions", specifier = ">=13.1.1,<14" },
+    { name = "pymdown-extensions", specifier = ">=13.1.2,<14" },
     { name = "zensical", specifier = ">=0.1.2,<0.1.3" },
 ]
 
